@@ -92,7 +92,13 @@
           <q-separator />
           <q-btn flat no-caps label="Settings" />
           <q-separator />
-          <q-btn flat no-caps color="negative" label="Sign Out" />
+          <q-btn
+            @click="logout"
+            flat
+            no-caps
+            color="negative"
+            label="Sign Out"
+          />
         </div>
       </q-card>
     </q-dialog>
@@ -101,6 +107,7 @@
 
 <script>
 import EssentialLink from "components/EssentialLink.vue";
+import { mapActions } from "vuex";
 
 const linksList = [
   {
@@ -142,6 +149,14 @@ export default defineComponent({
     return {
       dialog: false,
     };
+  },
+
+  methods: {
+    ...mapActions("auth", ["logoutUser"]),
+
+    logout() {
+      this.logoutUser();
+    },
   },
 });
 </script>

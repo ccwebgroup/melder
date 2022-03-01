@@ -7,10 +7,12 @@
         src="~assets/melder-logo.svg"
         style="width: 120px"
       />
-      <q-form class="q-gutter-md q-mt-md">
-        <q-input placeholder="Email" />
-        <q-input type="password" placeholder="Password" />
+      <q-form @submit="login" class="q-gutter-md q-mt-md">
+        <q-input v-model="email" type="email" placeholder="Email" />
+        <q-input v-model="password" type="password" placeholder="Password" />
         <q-btn
+          @submit="login"
+          type="submit"
           ripple
           rounded
           unelevated
@@ -32,4 +34,26 @@
   </q-page>
 </template>
 
-<script></script>
+<script>
+import { mapActions } from "vuex";
+
+export default {
+  data() {
+    return {
+      email: "",
+      password: "",
+    };
+  },
+
+  methods: {
+    ...mapActions("auth", ["loginUser"]),
+
+    login() {
+      this.loginUser({
+        email: this.email,
+        password: this.password,
+      });
+    },
+  },
+};
+</script>
