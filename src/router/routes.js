@@ -1,12 +1,4 @@
 const routes = [
-  {
-    path: "/",
-    component: () => import("layouts/MainLayout.vue"),
-    // children: [
-    //   { path: "", redirect}
-    // ]
-  },
-
   //Authentication Routes
   {
     path: "/auth",
@@ -20,13 +12,31 @@ const routes = [
     ],
   },
 
-  // User Routes
+  // Main Routes
   {
     path: "/",
     component: () => import("layouts/MainLayout.vue"),
+    redirect: "/home",
     children: [
-      { path: "", redirect: "/home" },
       { path: "/home", component: () => import("pages/user/Home.vue") },
+      { path: "/files", component: () => import("pages/files/Files.vue") },
+      { path: "/groups", component: () => import("pages/group/Groups.vue") },
+      {
+        path: "/updates",
+        component: () => import("pages/updates/Updates.vue"),
+      },
+    ],
+  },
+
+  //User Profile Routes
+  {
+    path: "/user",
+    component: () => import("layouts/UserLayout.vue"),
+    children: [
+      {
+        path: "/user/profile",
+        component: () => import("pages/user/UserProfile.vue"),
+      },
     ],
   },
 

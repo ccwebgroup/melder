@@ -1,5 +1,8 @@
 <template>
-  <q-page padding>
+  <q-page>
+    <q-toolbar class="text-dark">
+      <q-btn @click="$router.back()" no-caps flat icon="arrow_back" />
+    </q-toolbar>
     <div class="text-center q-mx-md">
       <div class="text-h6 q-my-md">Create Group</div>
       <q-avatar size="100px" font-size="52px" color="grey">
@@ -30,7 +33,5 @@
         label="Join Group"
       />
     </div>
-
-    <q-btn to="/home" class="float-right q-mt-xl" flat label="SKIP" />
   </q-page>
 </template>

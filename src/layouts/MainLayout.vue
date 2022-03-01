@@ -16,26 +16,38 @@
           <img src="~assets/melder-logo.svg" />
         </q-avatar>
         <q-space />
-        <q-btn flat round size="lg" icon="person" />
+        <q-btn @click="dialog = true" flat round size="lg" icon="person" />
       </q-toolbar>
     </q-header>
 
     <q-footer class="bg-white">
-      <q-tabs indicator-color="transparent" class="text-dark">
+      <q-tabs
+        indicator-color="transparent"
+        class="text-dark"
+        active-color="primary"
+      >
         <q-route-tab
+          to="/updates"
           no-caps
           name="update"
-          icon="fas fa-bullhorn"
+          icon="campaign"
           label="Updates"
         />
-        <q-route-tab no-caps name="groups" icon="fas fa-users" label="Groups" />
         <q-route-tab
-          to="/home"
+          to="/groups"
           no-caps
-          name="home"
-          icon="ti-home"
-          label="Home"
+          name="groups"
+          icon="group"
+          label="Groups"
         />
+        <q-route-tab
+          to="/files"
+          no-caps
+          name="files"
+          icon="folder"
+          label="Files"
+        />
+        <q-route-tab to="/home" no-caps name="home" icon="home" label="Home" />
       </q-tabs>
     </q-footer>
 
@@ -54,6 +66,36 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <!-- User Profile Menu Dialog -->
+    <q-dialog
+      v-model="dialog"
+      position="bottom"
+      transition-show="slide-up"
+      transition-hide="slide-down"
+    >
+      <q-card>
+        <q-card-section>
+          <q-item to="/user/profile">
+            <q-item-section avatar>
+              <q-avatar color="teal" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label class="text-subtitle2">Johnny Deep</q-item-label>
+              <q-item-label caption class="text-primary"
+                >Manage Your Profile</q-item-label
+              >
+            </q-item-section>
+          </q-item>
+        </q-card-section>
+        <div class="text-center">
+          <q-separator />
+          <q-btn flat no-caps label="Settings" />
+          <q-separator />
+          <q-btn flat no-caps color="negative" label="Sign Out" />
+        </div>
+      </q-card>
+    </q-dialog>
   </q-layout>
 </template>
 
@@ -93,6 +135,12 @@ export default defineComponent({
       toggleLeftDrawer() {
         leftDrawerOpen.value = !leftDrawerOpen.value;
       },
+    };
+  },
+
+  data() {
+    return {
+      dialog: false,
     };
   },
 });
