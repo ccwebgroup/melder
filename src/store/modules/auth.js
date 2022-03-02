@@ -1,11 +1,17 @@
 import {
   auth,
+  db,
   signInWithEmailAndPassword,
   onAuthStateChanged,
-  setPersistence,
+  updateProfile,
+  createUserWithEmailAndPassword,
 } from "boot/firebase";
 
-const state = {};
+import { Loading, Dialog } from "quasar";
+
+const state = {
+  authUser: {},
+};
 const getters = {};
 
 const actions = {
@@ -13,52 +19,99 @@ const actions = {
     auth.signOut();
   },
 
-  loginUser({ commit }, payload) {
-    signInWithEmailAndPassword(auth, payload.email, payload.password)
+  signUpUser({ commit, dispatch }, payload) {
+    Loading.show();
+    createUserWithEmailAndPassword(auth, payload.email, payload.password)
       .then((userCredential) => {
         // Signed in
-        // setPersistence(auth, browserSessionPersistence)
-        //   .then(() => {
-        //     // Existing and future Auth states are now persisted in the current
-        //     // session only. Closing the window would clear any existing state even
-        //     // if a user forgets to sign out.
-        //     // ...
-        //     // New sign-in will be persisted with session persistence.
-        //     return signInWithEmailAndPassword(auth, email, password);
-        //   })
-        //   .catch((error) => {
-        //     // Handle Errors here.
-        //     const errorCode = error.code;
-        //     const errorMessage = error.message;
-        //   });
         const user = userCredential.user;
+        updateProfile(user, {
+          displayName: payload.displayName,
+        });
+
         // ...
+        Loading.hide();
       })
       .catch((error) => {
         const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorMessage);
+        let errMessage;
+
+        switch (errorCode) {
+          case "auth/email-already-in-use":
+            errMessage = "Email is already registered!";
+            break;
+          case "auth/invalid-email":
+            errMessage = "Invalid Email.";
+            break;
+          case "auth/operation-not-allowed":
+            errMessage = "Operation is not allowed.";
+            break;
+          case "auth/weak-password":
+            errMessage =
+              "Password is weak. Try putting some symbols and numbers. Should be 8 digits or more.";
+            break;
+        }
+
+        Loading.hide();
+        Dialog.create({
+          title: "Sign Up Error",
+          message: errMessage,
+        }).onOk(() => {
+          // console.log('OK')
+        });
+      });
+  },
+
+  loginUser({ commit }, payload) {
+    Loading.show();
+    signInWithEmailAndPassword(auth, payload.email, payload.password)
+      .then((userCredential) => {
+        Loading.hide();
+        const user = userCredential.user;
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        let errMessage;
+
+        switch (errorCode) {
+          case "auth/invalid-email":
+            errMessage = "Email is invalid";
+            break;
+          case "auth/user-not-found":
+            errMessage = "User is not registered.";
+            break;
+          case "auth/wrong-password":
+            errMessage = "Wrong password.";
+            break;
+        }
+
+        Loading.hide();
+        Dialog.create({
+          title: "Login Error",
+          message: errMessage,
+        }).onOk(() => {
+          // console.log('OK')
+        });
       });
   },
 
   handleAuthStateChanged({ commit }) {
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/firebase.User
-        const uid = user.uid;
         this.$router.push("/home");
-        // ...
+        commit("setAuthUser", user);
+        console.log(user);
       } else {
         // User is signed out
-        this.$router.replace("/");
-        console.log("User logged out!");
+        this.$router.replace("/login");
       }
     });
   },
 };
 
-const mutations = {};
+const mutations = {
+  setAuthUser: (state, user) => (state.authUser = user),
+};
 
 export default {
   namespaced: true,

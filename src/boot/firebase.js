@@ -1,12 +1,14 @@
 import { initializeApp } from "firebase/app";
 
 // // Add the Firebase services that you want to use
-import "firebase/compat/firestore";
+import { getFirestore } from "firebase/firestore";
+
 import {
   getAuth,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  setPersistence,
+  updateProfile,
 } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -21,7 +23,14 @@ const firebaseConfig = {
 
 // Initialize Firebase
 let firebaseApp = initializeApp(firebaseConfig);
-// let db = firebaseApp.firestore();
+let db = getFirestore();
 let auth = getAuth();
 
-export { auth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence };
+export {
+  auth,
+  db,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  updateProfile,
+  createUserWithEmailAndPassword,
+};

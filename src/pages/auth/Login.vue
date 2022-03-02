@@ -25,7 +25,7 @@
       <div class="q-mt-xl">
         <div class="text-body1">
           Need an account?
-          <router-link class="router-link" to="/auth/signup">
+          <router-link class="router-link" to="/signup">
             <span class="text-h6 text-primary">Sign up</span>
           </router-link>
         </div>

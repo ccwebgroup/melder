@@ -78,10 +78,19 @@
         <q-card-section>
           <q-item to="/user/profile">
             <q-item-section avatar>
-              <q-avatar color="teal" />
+              <q-avatar v-if="authUser.photoURL" color="teal" />
+              <q-avatar
+                v-else
+                color="teal"
+                text-color="white"
+                class="text-bold"
+                >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
+              >
             </q-item-section>
             <q-item-section>
-              <q-item-label class="text-subtitle2">Johnny Deep</q-item-label>
+              <q-item-label class="text-subtitle2 text-bold">{{
+                authUser.displayName
+              }}</q-item-label>
               <q-item-label caption class="text-primary"
                 >Manage Your Profile</q-item-label
               >
@@ -107,7 +116,7 @@
 
 <script>
 import EssentialLink from "components/EssentialLink.vue";
-import { mapActions } from "vuex";
+import { mapActions, useStore } from "vuex";
 
 const linksList = [
   {
@@ -124,7 +133,7 @@ const linksList = [
   },
 ];
 
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, computed } from "vue";
 
 export default defineComponent({
   name: "MainLayout",
@@ -135,8 +144,11 @@ export default defineComponent({
 
   setup() {
     const leftDrawerOpen = ref(false);
+    const store = useStore();
+    const authUser = computed(() => store.state.auth.authUser);
 
     return {
+      authUser,
       essentialLinks: linksList,
       leftDrawerOpen,
       toggleLeftDrawer() {

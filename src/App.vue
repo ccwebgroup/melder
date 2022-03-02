@@ -9,12 +9,11 @@ export default defineComponent({
   name: "App",
 
   methods: {
-    ...mapActions("auth", ["handleAuthStateChanged", "logoutUser"]),
+    ...mapActions("auth", ["handleAuthStateChanged"]),
   },
 
   created() {
     this.handleAuthStateChanged();
-    // this.logoutUser();
   },
 });
 </script>
