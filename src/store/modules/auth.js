@@ -10,9 +10,13 @@ import {
 import { Loading, Dialog } from "quasar";
 
 const state = {
-  authUser: {},
+  authUser: "clint Eastwood",
 };
-const getters = {};
+const getters = {
+  getUser: (state) => {
+    return state.authUser;
+  },
+};
 
 const actions = {
   logoutUser() {
@@ -66,8 +70,10 @@ const actions = {
     Loading.show();
     signInWithEmailAndPassword(auth, payload.email, payload.password)
       .then((userCredential) => {
-        Loading.hide();
         const user = userCredential.user;
+        commit("setAuthUser", user);
+        this.$router.push("/home");
+        Loading.hide();
       })
       .catch((error) => {
         const errorCode = error.code;
@@ -98,14 +104,15 @@ const actions = {
   handleAuthStateChanged({ commit }) {
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        this.$router.push("/home");
         commit("setAuthUser", user);
-        console.log(user);
       } else {
-        // User is signed out
         this.$router.replace("/login");
       }
     });
+  },
+
+  testLang({ commit }) {
+    console.log("im here");
   },
 };
 

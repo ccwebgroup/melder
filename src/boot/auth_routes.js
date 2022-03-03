@@ -1,19 +1,28 @@
-import { route } from "quasar/wrappers";
-import { auth } from "./firebase";
+import { boot } from "quasar/wrappers";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import router from "src/router";
 
-export default ({ router, store, Vue }) => {
-  router.beforeEach(async (to, from) => {
-    if (to.meta.requiresAuth && !auth.currentUser) {
-      return {
-        path: "/login",
-        // save the location we were at to come back later
-        // query: { redirect: to.fullPath },
-      };
+export default boot(async ({ router, store }) => {
+  const auth = getAuth();
+
+  await new Promise((resolve) => {
+    const stopObserver = onAuthStateChanged(getAuth(), (firebaseUser) => {
+      resolve(firebaseUser);
+      stopObserver();
+    });
+  });
+
+  router.beforeEach((to, from) => {
+    if (!to.meta.requiresAuth || from.path === "/login") {
+      return;
     }
 
-    // If user is Auth can't go to login page
-    // if (to.fullPath === "/login" && auth.currentUser) {
-    //   return false;
-    // }
+    if (auth.currentUser && to.path === "/login") {
+      return { path: from.path };
+    }
+
+    if (!auth.currentUser && to.path !== "/login") {
+      return { path: "/login" };
+    }
   });
-};
+});
