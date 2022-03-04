@@ -3,6 +3,7 @@ import { createStore } from "vuex";
 
 // import example from './module-example'
 import auth from "./modules/auth";
+import group from "./modules/group";
 
 /*
  * If not building with SSR mode, you can
@@ -17,6 +18,7 @@ export default store(function (/* { ssrContext } */) {
   const Store = createStore({
     modules: {
       auth,
+      group,
     },
 
     // enable strict mode (adds overhead!)

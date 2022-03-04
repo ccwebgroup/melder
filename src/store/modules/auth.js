@@ -1,6 +1,5 @@
 import {
   auth,
-  db,
   signInWithEmailAndPassword,
   onAuthStateChanged,
   updateProfile,
@@ -23,7 +22,7 @@ const actions = {
     auth.signOut();
   },
 
-  signUpUser({ commit, dispatch }, payload) {
+  signUpUser({ commit }, payload) {
     Loading.show();
     createUserWithEmailAndPassword(auth, payload.email, payload.password)
       .then((userCredential) => {

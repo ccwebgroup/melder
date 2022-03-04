@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 
 // // Add the Firebase services that you want to use
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
 
 import {
   getAuth,
@@ -33,4 +33,7 @@ export {
   onAuthStateChanged,
   updateProfile,
   createUserWithEmailAndPassword,
+  collection,
+  addDoc,
+  getDocs,
 };

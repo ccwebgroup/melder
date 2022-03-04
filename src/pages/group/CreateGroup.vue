@@ -59,7 +59,9 @@
 
 <script setup>
 import { reactive, ref } from "vue";
+import { useStore } from "vuex";
 
+const store = useStore();
 const inviteCode = ref("");
 
 const group = reactive({
@@ -69,7 +71,9 @@ const group = reactive({
 });
 
 // Create Group
-const createGroup = () => {};
+const createGroup = () => {
+  store.dispatch("group/addGroup", group);
+};
 
 //Image Upload
 const uploadFile = () => {
