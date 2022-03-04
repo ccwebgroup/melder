@@ -21,6 +21,10 @@ export default boot(async ({ router, store }) => {
       return { path: from.path };
     }
 
+    if (auth.currentUser && to.path === "/signup") {
+      return { path: from.path };
+    }
+
     if (!auth.currentUser && to.path !== "/login") {
       return { path: "/login" };
     }

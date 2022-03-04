@@ -1,7 +1,19 @@
 import { initializeApp } from "firebase/app";
 
 // // Add the Firebase services that you want to use
-import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  doc,
+  addDoc,
+  getDocs,
+  getDoc,
+  setDoc,
+  updateDoc,
+  arrayUnion,
+  query,
+  where,
+} from "firebase/firestore";
 
 import {
   getAuth,
@@ -36,4 +48,11 @@ export {
   collection,
   addDoc,
   getDocs,
+  setDoc,
+  doc,
+  updateDoc,
+  arrayUnion,
+  getDoc,
+  query,
+  where,
 };

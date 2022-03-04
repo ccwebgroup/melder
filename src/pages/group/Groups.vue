@@ -23,7 +23,7 @@
     </div>
     <div class="text-subtitle1 text-bold">Groups You Managed</div>
     <!-- Skeleton -->
-    <div v-show="loading" v-for="(item, i) in 5" :key="i">
+    <div v-show="!groups_manage.length" v-for="(item, i) in 5" :key="i">
       <q-item>
         <q-item-section avatar>
           <q-skeleton type="QAvatar" />
@@ -39,42 +39,64 @@
         </q-item-section>
       </q-item>
     </div>
-    <div v-show="!loading" v-for="(group, i) in groups" :key="i">
-      <q-item>
-        <q-item-section avatar>
-          <q-avatar size="60px" :color="group.avatar" />
-        </q-item-section>
+    <div v-if="groups_manage.length">
+      <div
+        @click="viewGroupProfile(group.id)"
+        v-show="groups_manage"
+        v-for="group in groups_manage"
+        :key="group.id"
+      >
+        <q-item>
+          <q-item-section avatar>
+            <q-avatar v-if="group.photoURL">
+              <img :src="group.photoURL"
+            /></q-avatar>
+            <div v-else>
+              <q-avatar
+                v-if="group.name"
+                color="teal"
+                text-color="white"
+                class="text-bold"
+                >{{ group.name.charAt(0).toUpperCase() }}</q-avatar
+              >
+            </div>
+          </q-item-section>
 
-        <q-item-section>
-          <q-item-label class="text-subtitle2">
-            {{ group.name }}
-          </q-item-label>
-          <q-item-label caption>
-            <span>{{ group.members }}</span> Members
-          </q-item-label>
-        </q-item-section>
-      </q-item>
+          <q-item-section>
+            <q-item-label class="text-subtitle2">
+              {{ group.name }}
+            </q-item-label>
+            <q-item-label caption>
+              <span>{{
+                group.members.length == 0 ? 0 : group.members.length
+              }}</span>
+              Members
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+      </div>
     </div>
   </q-page>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      loading: true,
-      groups: [
-        { name: "Kachinas", members: 44, avatar: "blue" },
-        { name: "Tau Gamma", members: 354, avatar: "green" },
-        { name: "Kabayan Party List", members: 254, avatar: "pink" },
-        { name: "National Soldier", members: 54, avatar: "orange" },
-      ],
-    };
-  },
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { useStore } from "vuex";
 
-  mounted() {
-    console.log("Groups Component is mounted!");
-    this.loading = false;
-  },
+const store = useStore();
+
+// Get Groups Manage
+const groups_manage = computed(() => store.state.group.groups_manage);
+const getGroupsManage = () => {
+  store.dispatch("group/getGroupsManage");
 };
+
+// Get Group Details
+const viewGroupProfile = (id) => {
+  store.dispatch("group/clearGroupDetails", id);
+};
+
+onMounted(() => {
+  getGroupsManage();
+});
 </script>

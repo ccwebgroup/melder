@@ -7,9 +7,7 @@
           enter-active-class="slide-up"
           leave-active-class="slide-down"
         >
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
+          <component :is="Component" />
         </transition>
       </router-view>
     </q-page-container>

@@ -5,12 +5,14 @@ import {
   updateProfile,
   createUserWithEmailAndPassword,
 } from "boot/firebase";
-
+import { db, collection, addDoc, getDocs, setDoc } from "boot/firebase";
+import { doc, where } from "firebase/firestore";
 import { Loading, Dialog } from "quasar";
 
 const state = {
-  authUser: "clint Eastwood",
+  authUser: {},
 };
+
 const getters = {
   getUser: (state) => {
     return state.authUser;
@@ -26,13 +28,17 @@ const actions = {
     Loading.show();
     createUserWithEmailAndPassword(auth, payload.email, payload.password)
       .then((userCredential) => {
-        // Signed in
         const user = userCredential.user;
         updateProfile(user, {
           displayName: payload.displayName,
         });
+        if (user) {
+          const docRef = setDoc(doc(db, "users", user.uid), {
+            groups_manage: [],
+          });
+        }
 
-        // ...
+        this.$router.replace("/group/create");
         Loading.hide();
       })
       .catch((error) => {
@@ -109,14 +115,12 @@ const actions = {
       }
     });
   },
-
-  testLang({ commit }) {
-    console.log("im here");
-  },
 };
 
 const mutations = {
-  setAuthUser: (state, user) => (state.authUser = user),
+  setAuthUser: (state, user) => {
+    state.authUser = user;
+  },
 };
 
 export default {

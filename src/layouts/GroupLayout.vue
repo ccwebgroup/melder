@@ -7,9 +7,7 @@
           enter-active-class="slideInRight"
           leave-active-class="slideOutRight"
         >
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
+          <component :is="Component" :key="$route.path" />
         </transition>
       </router-view>
     </q-page-container>
