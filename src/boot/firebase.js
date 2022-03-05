@@ -13,6 +13,8 @@ import {
   arrayUnion,
   query,
   where,
+  serverTimestamp,
+  writeBatch,
 } from "firebase/firestore";
 
 import {
@@ -55,4 +57,6 @@ export {
   getDoc,
   query,
   where,
+  serverTimestamp,
+  writeBatch,
 };

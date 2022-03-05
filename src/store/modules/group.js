@@ -1,4 +1,4 @@
-import { Loading, Dialog } from "quasar";
+import { Loading, Dialog, Notify } from "quasar";
 import { useRoute } from "vue-router";
 
 import {
@@ -14,6 +14,7 @@ import {
   arrayUnion,
   query,
   where,
+  writeBatch,
 } from "boot/firebase";
 
 const state = {
@@ -21,17 +22,43 @@ const state = {
   groups_manage: null,
 };
 
-const getters = {
-  getProfile: (state) => {
-    return state.groupDetails;
-  },
-  //  return {
-  //   name: state.groupDetails.name,
-  //   description: state.groupDetails.description,
-  // };
-};
+const getters = {};
 
 const actions = {
+  async updateGroupProfile({ commit }, payload) {
+    const notif = Notify.create({
+      type: "ongoing",
+      message: "Please wait...",
+      timeout: 0,
+      position: "center",
+    });
+    const batch = writeBatch(db);
+    const docRef = doc(db, "groups", payload.id);
+    if (payload.photoURL) {
+      batch.update(docRef, { photoURL: payload.photoURL });
+    }
+    if (payload.name) {
+      batch.update(docRef, { name: payload.name });
+    }
+    if (payload.description) {
+      batch.update(docRef, { description: payload.description });
+    }
+    // Commit the batch
+    const result = await batch.commit();
+
+    const groupRef = doc(db, "groups", payload.id);
+    const groupDocSnap = await getDoc(groupRef);
+    const groupData = groupDocSnap.data();
+    groupData.id = groupDocSnap.id;
+    commit("setGroupDetails", groupData);
+
+    notif({
+      type: "positive",
+      message: "Succesfully Updated!",
+      timeout: 1000,
+    });
+  },
+
   async getGroupsManage({ commit }) {
     let creator_id = auth.currentUser.uid;
     const q = query(
@@ -81,15 +108,13 @@ const actions = {
     }
   },
 
-  async viewGroupProfile({ commit }, payload) {
-    const docRef = doc(db, "groups", payload);
+  async viewGroupProfile({ commit }, group_id) {
+    const docRef = doc(db, "groups", group_id);
     const docSnap = await getDoc(docRef);
-    commit("setGroupDetails", docSnap.data());
-  },
-
-  async clearGroupDetails({ commit }, id) {
-    commit("setClearedDetails");
-    this.$router.push("/group/" + id);
+    const groupData = docSnap.data();
+    groupData.id = docSnap.id;
+    commit("setGroupDetails", groupData);
+    this.$router.push("/group/" + group_id);
   },
 };
 
@@ -109,7 +134,6 @@ const mutations = {
     });
   },
   setGroupsManage: (state, data) => (state.groups_manage = data),
-  setClearedDetails: (state) => (state.groupDetails = {}),
 };
 
 export default {
