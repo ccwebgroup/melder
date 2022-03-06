@@ -4,6 +4,7 @@ import createPersistedState from "vuex-persistedstate";
 
 // import example from './module-example'
 import auth from "./modules/auth";
+import user from "./modules/user";
 import group from "./modules/group";
 
 /*
@@ -19,6 +20,7 @@ export default store(function (/* { ssrContext } */) {
   const Store = createStore({
     modules: {
       auth,
+      user,
       group,
     },
 

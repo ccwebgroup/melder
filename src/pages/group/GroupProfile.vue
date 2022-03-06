@@ -167,7 +167,6 @@
                 :disable="disableUpdate"
                 unelevated
                 class="q-mb-md"
-                outline
                 style="width: 150px"
                 color="primary"
                 rounded
@@ -215,7 +214,7 @@ watch(currentGroup, () => {
   disableUpdate.value = false;
 });
 
-// Store State
+// Store State as a computed property
 const groupDetails = computed(() => store.state.group.groupDetails);
 
 // Editing Profile
