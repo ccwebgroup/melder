@@ -156,9 +156,5 @@ export default {
       return qDate.formatDate(timestamp, "ddd MMMM D, YYYY | h:mm a");
     },
   },
-
-  mounted() {
-    console.log("Updates compnent is mounted!");
-  },
 };
 </script>

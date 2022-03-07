@@ -114,7 +114,7 @@ const viewProfile = (id) => {
 const showLoading = () => {
   setTimeout(() => {
     loading.value = false;
-  }, 2000);
+  }, 1000);
 };
 
 onMounted(() => {

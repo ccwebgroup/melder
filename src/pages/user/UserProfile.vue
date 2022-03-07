@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <q-toolbar class="text-dark">
+    <q-toolbar>
       <q-btn @click="$router.go(-1)" no-caps flat icon="arrow_back" />
     </q-toolbar>
     <transition
@@ -9,21 +9,20 @@
       leave-active-class="animated fadeOut"
     >
       <div v-show="!loading" class="q-pa-md">
-        <div class="text-h6 text-bold">Your Profile</div>
         <div class="row">
           <q-space />
           <q-btn
             @click="editingMode(authUser)"
             no-caps
             flat
-            color="primary"
+            :color="$q.dark.isActive ? 'secondary' : 'primary'"
             size="15px"
             label="Edit Profile"
           />
         </div>
         <div class="text-center">
           <q-avatar size="100px" v-if="authUser.photoURL">
-            <img src="https://cdn.quasar.dev/img/avatar.png"
+            <img id="profile_avatar" :src="authUser.photoURL"
           /></q-avatar>
           <q-avatar
             v-else
@@ -46,11 +45,17 @@
         <div>
           <!-- Bio -->
           <div class="text-subtitle1 text-bold">Bio</div>
-          <div class="text-body2"></div>
+          <div class="text-body2">
+            {{ profile.bio }}
+          </div>
           <!-- Address -->
           <div class="text-subtitle1 q-mt-md text-bold">Address</div>
-          <div class="text-body2">So. Trozo, Brgy Buluangan, Scc</div>
+          <div class="text-body2">{{ profile.address }}</div>
+
           <!-- Social Links and Contacts -->
+          <div class="q-pa-md">
+            <q-btn color="primary" icon="add" label="Add social link" />
+          </div>
           <q-list>
             <q-item clickable>
               <q-item-section avatar
@@ -126,12 +131,20 @@
         </q-card-section>
 
         <q-card-actions>
+          <q-btn
+            unelevated
+            :disable="disableUpdate"
+            style="width: 150px"
+            rounded
+            no-caps
+            label="Back"
+            v-close-popup
+          />
           <q-space />
           <q-btn
             @click="saveProfile"
             unelevated
             :disable="disableUpdate"
-            class="q-mb-md"
             style="width: 150px"
             color="primary"
             rounded
@@ -191,15 +204,17 @@ const user = reactive({
   password: "",
   bio: "",
   address: "",
-  social_links: [{ username: "", link: "" }],
+  social_links: [],
 });
 
 const confirmDetails = reactive({
   email: "",
   password: "",
 });
+
 // Computued Properties
 const authUser = computed(() => store.state.auth.authUser);
+const profile = computed(() => store.state.user.profile);
 
 // Editing Profile
 const editingMode = (authUser) => {
@@ -207,8 +222,8 @@ const editingMode = (authUser) => {
   user.displayName = authUser.displayName;
   user.photoURL = authUser.photoURL;
   user.email = authUser.email;
-  user.bio = authUser.bio ? authUser.bio : "";
-  user.address = authUser.address ? authUser.address : "";
+  user.bio = profile.value.bio ? profile.value.bio : "";
+  user.address = profile.value.address ? profile.value.address : "";
   editDialog.value = true;
 };
 const saveProfile = () => {
@@ -249,6 +264,11 @@ const fileUploaded = (e) => {
   }
 };
 
+// Set USer Profile
+const getUser = (id) => {
+  store.dispatch("user/getUserProfile", id);
+};
+
 //Loading State
 const showLoading = () => {
   setTimeout(() => {
@@ -258,5 +278,6 @@ const showLoading = () => {
 
 onMounted(() => {
   showLoading();
+  getUser(authUser.value.uid);
 });
 </script>

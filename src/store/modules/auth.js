@@ -5,9 +5,16 @@ import {
   updateProfile,
   createUserWithEmailAndPassword,
 } from "boot/firebase";
-import { db, collection, addDoc, getDocs, setDoc } from "boot/firebase";
-import { doc, where } from "firebase/firestore";
-import { Loading, Dialog } from "quasar";
+import {
+  db,
+  collection,
+  addDoc,
+  getDocs,
+  setDoc,
+  doc,
+  getDoc,
+} from "boot/firebase";
+import { Loading, Dialog, Dark } from "quasar";
 
 const state = {
   authUser: {},
@@ -110,6 +117,13 @@ const actions = {
     onAuthStateChanged(auth, (user) => {
       if (user) {
         commit("setAuthUser", user);
+        const userRef = doc(db, "users", user.uid);
+        getDoc(userRef).then((docSnap) => {
+          const data = docSnap.data();
+          // set Dark theme status
+          Dark.set(data.darkTheme);
+          commit("user/setUserProfile", data, { root: true });
+        });
       } else {
         this.$router.replace("/login");
       }
