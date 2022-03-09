@@ -44,6 +44,13 @@
         </q-list>
       </q-card-section>
     </q-card>
+
+    <q-card flat>
+      <q-card-section>
+        <div class="text-subtitl2 q-mb-md">Events</div>
+        <q-card style="height: 150px" class="bg-red"> </q-card>
+      </q-card-section>
+    </q-card>
   </q-page>
 </template>
 

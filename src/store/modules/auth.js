@@ -40,7 +40,10 @@ const actions = {
           displayName: payload.displayName,
         });
         if (user) {
+          console.log(user);
           const docRef = setDoc(doc(db, "users", user.uid), {
+            displayName: payload.displayName,
+            photoUrl: user.photoUrl,
             groups_manage: [],
           });
         }

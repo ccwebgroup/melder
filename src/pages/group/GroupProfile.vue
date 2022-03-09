@@ -1,7 +1,7 @@
 <template>
   <q-page>
-    <q-toolbar class="text-dark">
-      <q-btn @click="$router.go(-1)" no-caps flat icon="arrow_back" />
+    <q-toolbar :class="$q.dark.isActive ? '' : 'text-dark'">
+      <q-btn @click="$router.go(-1)" round flat icon="arrow_back" />
     </q-toolbar>
     <transition
       appear
@@ -9,7 +9,7 @@
       leave-active-class="animated fadeOut"
     >
       <div v-show="!loading">
-        <q-item v-if="groupDetails">
+        <q-item>
           <q-item-section>
             <q-avatar size="100px" v-if="groupDetails.photoURL">
               <img :src="groupDetails.photoURL"
@@ -26,9 +26,9 @@
           </q-item-section>
           <!-- Role Buttons -->
           <q-item-section side>
-            <div class="q-gutter-sm">
+            <div class="q-gutter-md">
               <q-btn
-                v-if="groupDetails.myRole.role_settings.all"
+                v-if="groupDetails.myRole.settings.all"
                 @click="adminDialog = true"
                 dense
                 outline
@@ -37,18 +37,20 @@
               />
               <q-btn
                 v-if="
-                  groupDetails.myRole.role_settings.all ||
-                  groupDetails.myRole.role_settings.canAdd
+                  groupDetails.myRole.settings.all ||
+                  groupDetails.myRole.settings.canAdd
                 "
+                @click="addMemberDialog = true"
                 dense
                 outline
                 round
                 icon="person_add"
-              />.
+              />
               <q-btn dense outline round icon="notifications_none" />
             </div>
           </q-item-section>
         </q-item>
+
         <div class="text-subtitle2 text-bold q-px-md q-mb-sm">
           {{ groupDetails.name }}
         </div>
@@ -79,7 +81,7 @@
       </div>
     </transition>
 
-    <!-- Dialogs -->
+    <!-- Admin Dialog -->
     <q-dialog
       v-model="adminDialog"
       maximized
@@ -87,36 +89,115 @@
       transition-hide="slide-right"
     >
       <q-card>
-        <q-toolbar class="text-dark">
+        <q-toolbar :class="$q.dark.isActive ? '' : 'text-dark'">
           <q-btn v-close-popup no-caps flat icon="arrow_back" />
         </q-toolbar>
         <q-card-section class="q-gutter-y-sm">
           <div class="text-h6 text-bold">Settings</div>
-          <div class="row q-gutter-x-sm">
-            <q-input dense readonly label="Invite Code" />
-            <q-btn dense no-caps outline color="primary" label="Copy" />
-          </div>
           <q-list>
             <q-item @click="editingMode(groupDetails)" clickable v-ripple>
               <q-item-section avatar>
-                <q-icon name="edit" />
+                <q-icon name="ti-pencil-alt" />
               </q-item-section>
               <q-item-section class="text-subtitle1"
-                >Edit Profile</q-item-section
+                >Edit Group Profile</q-item-section
+              >
+            </q-item>
+            <q-item
+              :class="$q.dark.isActive ? 'text-warning' : 'text-negative'"
+              @click="confirmDialog = true"
+              clickable
+              v-ripple
+            >
+              <q-item-section avatar>
+                <q-icon name="ti-trash" />
+              </q-item-section>
+              <q-item-section class="text-subtitle1"
+                >Delete Group Permanently</q-item-section
               >
             </q-item>
           </q-list>
         </q-card-section>
+      </q-card>
+    </q-dialog>
 
-        <q-card-actions class="q-mt-md">
-          <q-space />
-          <q-btn
-            no-caps
+    <!-- Add Member Dialog -->
+    <q-dialog
+      v-model="addMemberDialog"
+      maximized
+      transition-show="slide-up"
+      transition-hide="slide-down"
+    >
+      <q-card>
+        <q-toolbar :class="$q.dark.isActive ? '' : 'text-dark'">
+          <q-btn v-close-popup no-caps flat icon="arrow_back" />
+        </q-toolbar>
+        <div class="q-px-md">
+          <div class="text-h6 text-bold">Invite</div>
+          <q-list>
+            <q-item clickable v-ripple>
+              <q-item-section avatar>
+                <q-icon name="ti-key" />
+              </q-item-section>
+              <q-item-section class="text-subtitle1"
+                >Get Invite Code</q-item-section
+              >
+            </q-item>
+          </q-list>
+          <q-input
+            v-model="search"
+            debounce="500"
+            dense
             rounded
-            color="negative"
-            label="Delete Group Permanently"
-          />
-        </q-card-actions>
+            outlined
+            type="search"
+            placeholder="Search"
+          >
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
+        <q-card>
+          <q-card-section v-show="!searching">
+            <!-- Search Results -->
+            <transition
+              appear
+              enter-active-class="animated fadeIn"
+              leave-active-class="animated fadeOut"
+            >
+              <div>
+                <q-list dense>
+                  <q-item v-for="user in searchResults" :key="user.id">
+                    <q-item-section avatar>
+                      <q-avatar v-if="user.photoURL">
+                        <img :src="user.photoURL" alt="Avatar" />
+                      </q-avatar>
+                      <q-avatar
+                        v-else
+                        color="teal"
+                        text-color="white"
+                        class="text-bold"
+                        >{{
+                          user.displayName.charAt(0).toUpperCase()
+                        }}</q-avatar
+                      >
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-subtitle2">{{
+                        user.displayName
+                      }}</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-btn round flat icon="las la-user-plus" />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </div>
+            </transition>
+          </q-card-section>
+          <q-inner-loading color="primary" :showing="searching" />
+        </q-card>
       </q-card>
     </q-dialog>
 
@@ -184,21 +265,56 @@
       </q-card>
     </q-dialog>
 
+    <!-- Confirmation dialog before group deletion -->
+    <q-dialog v-model="confirmDialog" persistent>
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Verify yourself</div>
+        </q-card-section>
+        <div
+          class="q-pa-md text-subtitle2"
+          :class="$q.dark.isActive ? 'text-warning' : 'text-negative'"
+        >
+          Please confirm all details to permanently delete group
+        </div>
+
+        <q-card-section class="q-pt-none q-gutter-y-sm">
+          <q-input
+            type="email"
+            v-model="confirmDetails.email"
+            autofocus
+            label="Email"
+          />
+          <q-input
+            type="password"
+            v-model="confirmDetails.password"
+            label="Password"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn @click="confirmedDelete" flat label="Confirm" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Loading design -->
     <q-inner-loading :showing="loading" />
   </q-page>
 </template>
 
 <script setup>
-import { useQuasar } from "quasar";
 import { onMounted, ref, computed, reactive, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from "vuex";
 
+const search = ref();
 const store = useStore();
 const route = useRoute();
 const tab = ref("");
 const loading = ref(true);
+const searching = ref(false);
 const currentGroup = reactive({
   id: "",
   name: "",
@@ -206,16 +322,52 @@ const currentGroup = reactive({
   photoURL: "",
 });
 const adminDialog = ref(false);
+const addMemberDialog = ref(true);
 const editDialog = ref(false);
 const disableUpdate = ref(true);
+const confirmDialog = ref(false);
+const confirmDetails = reactive({
+  email: "",
+  password: "",
+});
+
+// Store State as a computed property
+const searchResults = computed(() => store.state.user.searchResults);
+const groupDetails = computed(() => store.state.group.groupDetails);
 
 // Watch changes on the input fields
 watch(currentGroup, () => {
   disableUpdate.value = false;
 });
 
-// Store State as a computed property
-const groupDetails = computed(() => store.state.group.groupDetails);
+// WATCH search input
+watch(search, (value, oldValue) => {
+  if (value) {
+    searching.value = true;
+    getPeople();
+  }
+});
+watch(searchResults, (value, oldValue) => {
+  if (value) {
+    setTimeout(() => {
+      searching.value = false;
+    }, 900);
+  }
+});
+
+// Get People on Search
+const getPeople = () => {
+  store.dispatch("user/getPeopleOnSearch", search.value);
+};
+
+// Delete Group permanently
+const confirmedDelete = () => {
+  store.dispatch("user/reAuthenticateUser", {
+    credential: confirmDetails,
+    group_id: groupDetails.value.id,
+  });
+  confirmDialog.value = false;
+};
 
 // Editing Profile
 const editingMode = (group) => {
@@ -223,14 +375,14 @@ const editingMode = (group) => {
   currentGroup.name = group.name;
   currentGroup.description = group.description;
   editDialog.value = true;
+  adminDialog.value = false;
 };
 const saveProfile = () => {
   store.dispatch("group/updateGroupProfile", currentGroup);
 };
-
 // Get Group Details
-const getDetails = (id) => {
-  store.dispatch("group/viewGroupProfile", id);
+const getDetails = () => {
+  store.dispatch("group/viewGroupProfile", route.params.id);
 };
 
 //Image Upload
@@ -259,6 +411,6 @@ const showLoading = () => {
 
 onMounted(() => {
   showLoading();
-  getDetails(groupDetails.value.id);
+  getDetails();
 });
 </script>

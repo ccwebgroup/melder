@@ -4,8 +4,10 @@ import {
   db,
   doc,
   getDoc,
+  getDocs,
   updateProfile,
   updateDoc,
+  deleteDoc,
   updateEmail,
   reauthenticateWithCredential,
   signInWithEmailAndPassword,
@@ -14,11 +16,19 @@ import {
   ref,
   uploadString,
   getDownloadURL,
+  arrayUnion,
+  arrayRemove,
+  query,
+  collection,
+  orderBy,
+  startAt,
+  endAt,
 } from "boot/firebase";
 
 // State
 const state = {
   profile: null,
+  searchResults: null,
 };
 
 // Getters
@@ -26,6 +36,29 @@ const getters = {};
 
 // Actions
 const actions = {
+  async getPeopleOnSearch({ commit }, keyword) {
+    commit("setSearchResults", null);
+    if (keyword) {
+      const userRef = collection(db, "users");
+      const q = query(
+        userRef,
+        orderBy("displayName"),
+        startAt(keyword),
+        endAt(keyword + "\uf8ff")
+      );
+
+      const querySnapshot = await getDocs(q);
+      const resultArray = [];
+      querySnapshot.forEach((doc) => {
+        let user = doc.data();
+        user.id = doc.id;
+        resultArray.push(user);
+        console.log(doc.id, " => ", doc.data());
+      });
+      commit("setSearchResults", resultArray);
+    }
+  },
+
   async getUserProfile({ commit }, id) {
     const userRef = doc(db, "users", id);
     const docSnap = await getDoc(userRef);
@@ -40,6 +73,7 @@ const actions = {
   async updateUserProfile({ commit, dispatch }, payload) {
     //Auth user
     const authUser = auth.currentUser;
+    const userRef = doc(db, "users", authUser.uid);
     let photoURL;
     const notif = Notify.create({
       type: "ongoing",
@@ -49,7 +83,7 @@ const actions = {
     });
 
     // Change avatar or profile photo
-    if (payload.photoURL !== authUser.photoURL) {
+    if (payload.photoURL && payload.photoURL !== authUser.photoURL) {
       const avatarsRef = ref(
         storage,
         "users/" + authUser.uid + "/avatar/" + authUser.uid
@@ -61,6 +95,10 @@ const actions = {
             updateProfile(authUser, {
               photoURL: photoURL,
             });
+            updateDoc(userRef, {
+              photoURL: photoURL,
+            });
+
             //Relaod the element image source
             document.querySelector("#profile_avatar").src = url;
           });
@@ -68,22 +106,39 @@ const actions = {
       );
     }
 
+    // Change Name
     if (payload.displayName) {
       updateProfile(authUser, {
         displayName: payload.displayName,
       });
+      updateDoc(userRef, {
+        displayName: payload.displayName,
+      });
     }
-
+    // Change Email
     if (payload.email !== authUser.email) {
       await updateEmail(authUser, payload.email);
     }
 
-    const userRef = doc(db, "users", authUser.uid);
-
-    await updateDoc(userRef, {
-      bio: payload.bio,
-      address: payload.address,
-    });
+    // Change Bio, Address
+    if (payload.bio || payload.address) {
+      await updateDoc(userRef, {
+        bio: payload.bio,
+        address: payload.address,
+      });
+    }
+    // Add Social, Link
+    if (payload.link) {
+      if (payload.delete) {
+        await updateDoc(userRef, {
+          social_links: arrayRemove(payload.link),
+        });
+      } else {
+        await updateDoc(userRef, {
+          social_links: arrayUnion(payload.link),
+        });
+      }
+    }
 
     dispatch("getUserProfile", authUser.uid);
 
@@ -104,7 +159,28 @@ const actions = {
       );
 
       reauthenticateWithCredential(auth.currentUser, credential).then(() => {
-        dispatch("updateUserProfile", payload.newDetails);
+        //  If User updates sensitive details
+        if (payload.newDetails) {
+          dispatch("updateUserProfile", payload.newDetails);
+        }
+        if (payload.group_id) {
+          deleteDoc(doc(db, "groups", payload.group_id))
+            .then(() => {
+              Notify.create({
+                type: "positive",
+                message: "Succesfully deleted!",
+                timeout: 1000,
+              });
+              this.$router.push("/groups");
+            })
+            .catch((err) => {
+              Loading.hide();
+              Dialog.create({
+                title: "Error",
+                message: err.message,
+              });
+            });
+        }
         Loading.hide();
       });
     } catch (error) {
@@ -128,6 +204,7 @@ const actions = {
 
 // Mutations
 const mutations = {
+  setSearchResults: (state, results) => (state.searchResults = results),
   setUserProfile: (state, user) => (state.profile = user),
 };
 

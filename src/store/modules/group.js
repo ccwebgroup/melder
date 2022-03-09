@@ -91,15 +91,14 @@ const actions = {
             role: "Administrator",
           },
         ],
-        roles: [{ role_name: "Administrator" }],
+        roles: [{ role_name: "Administrator", settings: { all: true } }],
       });
       if (docRef.id) {
         const userRef = doc(db, "users", auth.currentUser.uid);
         updateDoc(userRef, {
           groups_manage: arrayUnion({ group_id: docRef.id }),
         });
-
-        dispatch("clearGroupDetails", docRef.id);
+        this.$router.push("/group/" + docRef.id);
       }
       Loading.hide();
     } catch (e) {
@@ -114,7 +113,6 @@ const actions = {
     const groupData = docSnap.data();
     groupData.id = docSnap.id;
     commit("setGroupDetails", groupData);
-    this.$router.push("/group/" + group_id);
   },
 };
 

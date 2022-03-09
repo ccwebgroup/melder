@@ -16,7 +16,7 @@
         <img v-else :src="group.photo" />
       </q-avatar>
 
-      <div class="q-gutter-y-lg">
+      <div class="q-gutter-y-md">
         <q-input v-model="group.name" placeholder="Group Name" />
         <q-input
           v-model="group.description"
@@ -37,7 +37,7 @@
           label="Create"
         />
       </div>
-      <div class="text-subtitle1 q-mt-xl">Already have an invite code?</div>
+      <div class="text-subtitle1 q-mt-md">Already have an invite code?</div>
       <q-input
         v-model="inviteCode"
         class="q-mt-md"
@@ -50,9 +50,12 @@
         no-caps
         unelevated
         color="primary"
-        class="q-mt-lg"
+        class="q-mt-md"
         label="Join Group"
       />
+      <div class="text-right q-mt-md">
+        <q-btn to="/home" flat label="Skip" />
+      </div>
     </div>
   </q-page>
 </template>

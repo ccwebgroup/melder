@@ -1,73 +1,148 @@
 <template>
   <q-page>
-    <q-toolbar>
-      <q-btn @click="$router.go(-1)" no-caps flat icon="arrow_back" />
-    </q-toolbar>
     <transition
       appear
-      enter-active-class="animated fadeIn"
-      leave-active-class="animated fadeOut"
+      enter-active-class="animated slideInUp"
+      leave-active-class="animated slideOutDown"
     >
-      <div v-show="!loading" class="q-pa-md">
-        <div class="row">
-          <q-space />
-          <q-btn
-            @click="editingMode(authUser)"
-            no-caps
-            flat
-            :color="$q.dark.isActive ? 'secondary' : 'primary'"
-            size="15px"
-            label="Edit Profile"
-          />
-        </div>
-        <div class="text-center">
-          <q-avatar size="100px" v-if="authUser.photoURL">
-            <img id="profile_avatar" :src="authUser.photoURL"
-          /></q-avatar>
-          <q-avatar
-            v-else
-            size="100px"
-            color="teal"
-            text-color="white"
-            class="text-bold"
-            >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
-          >
-          <div class="text-subtitle2 text-bold q-mt-sm">
-            {{ authUser.displayName }}
-          </div>
-          <div class="text-caption">
-            <q-icon name="email" class="q-mr-sm" /><span>{{
-              authUser.email
-            }}</span>
-          </div>
-        </div>
+      <div>
+        <q-toolbar>
+          <q-btn @click="$router.go(-1)" no-caps flat icon="arrow_back" />
+        </q-toolbar>
+        <transition
+          appear
+          enter-active-class="animated fadeIn"
+          leave-active-class="animated fadeOut"
+        >
+          <div v-show="!loading" class="q-pa-md">
+            <div class="row">
+              <q-space />
+              <q-btn
+                @click="editingMode(authUser)"
+                no-caps
+                flat
+                :color="$q.dark.isActive ? 'secondary' : 'primary'"
+                size="15px"
+                label="Edit Profile"
+              />
+            </div>
+            <div class="text-center">
+              <q-avatar size="100px" v-if="authUser.photoURL">
+                <img id="profile_avatar" :src="authUser.photoURL"
+              /></q-avatar>
+              <q-avatar
+                v-else
+                size="100px"
+                color="teal"
+                text-color="white"
+                class="text-bold"
+                >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
+              >
+              <div class="text-subtitle2 text-bold q-mt-sm">
+                {{ authUser.displayName }}
+              </div>
+              <div class="text-caption">
+                <q-icon name="email" class="q-mr-sm" /><span>{{
+                  authUser.email
+                }}</span>
+              </div>
+            </div>
 
-        <div>
-          <!-- Bio -->
-          <div class="text-subtitle1 text-bold">Bio</div>
-          <div class="text-body2">
-            {{ profile.bio }}
-          </div>
-          <!-- Address -->
-          <div class="text-subtitle1 q-mt-md text-bold">Address</div>
-          <div class="text-body2">{{ profile.address }}</div>
+            <!-- PROFILE CONTENTS -->
+            <div>
+              <!-- Groups -->
+              <div class="text-subtitle1 text-bold">Groups</div>
+              <q-virtual-scroll
+                :items="groups_manage"
+                virtual-scroll-horizontal
+                class="hide-scrollbar"
+              >
+                <template v-slot="{ item, index }">
+                  <div class="q-pa-sm" :key="index" :class="item.class">
+                    <q-avatar size="60px">
+                      <img :src="item.photoURL" alt="Group Avatar" />
+                    </q-avatar>
+                  </div>
+                </template>
+              </q-virtual-scroll>
+              <!-- Bio -->
+              <div class="text-subtitle1 text-bold q-mt-sm">Bio</div>
+              <div class="text-body2">
+                {{ profile.bio }}
+              </div>
+              <!-- Address -->
+              <div class="text-subtitle1 q-mt-md text-bold">Address</div>
+              <div class="text-body2">{{ profile.address }}</div>
+              <!-- Social Links -->
+              <div class="text-subtitle1 q-mt-md text-bold">Social Links</div>
+              <q-list dense class="q-mt-md">
+                <q-item
+                  v-for="link in profile.social_links"
+                  :key="link.platform"
+                  clickable
+                >
+                  <q-item-section avatar
+                    ><q-icon
+                      class="text-primary"
+                      size="xs"
+                      :name="'ti-' + link.platform.toLowerCase()"
+                  /></q-item-section>
+                  <q-item-section @click="openLink(link)">
+                    {{ link.username }}</q-item-section
+                  >
+                  <q-item-section side>
+                    <q-btn
+                      @click="deleteSocialLink(link)"
+                      flat
+                      round
+                      size="xs"
+                      icon="ti-close"
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
 
-          <!-- Social Links and Contacts -->
-          <div class="q-pa-md">
-            <q-btn color="primary" icon="add" label="Add social link" />
+              <!-- Adding Social Links and Contacts -->
+              <div class="q-pa-md q-gutter-y-md">
+                <q-select
+                  dense
+                  label="Platform"
+                  v-model="social_links.platform"
+                  standout="bg-primary text-white"
+                  @update:model-value="addSocialLink"
+                  :options="platforms"
+                />
+                <transition
+                  appear
+                  enter-active-class="animated fadeInUp"
+                  leave-active-class="animated fadeOutDown"
+                >
+                  <div class="q-gutter-y-sm" v-if="social_links.platform">
+                    <q-input
+                      v-model="social_links.username"
+                      dense
+                      outlined
+                      placeholder="Username"
+                    />
+                    <div class="text-right">
+                      <q-btn
+                        @click="saveSocialLink"
+                        :disable="!social_links.username"
+                        rounded
+                        unelevated
+                        dense
+                        style="width: 120px"
+                        label="save"
+                      />
+                    </div>
+                  </div>
+                </transition>
+              </div>
+            </div>
           </div>
-          <q-list>
-            <q-item clickable>
-              <q-item-section avatar
-                ><q-icon name="ti-facebook"
-              /></q-item-section>
-              <q-item-section> Ronil Lim </q-item-section>
-            </q-item>
-          </q-list>
-        </div>
+        </transition>
       </div>
     </transition>
-
     <!-- Edit Profile dialog -->
     <q-dialog
       v-model="editDialog"
@@ -186,6 +261,14 @@
     <q-inner-loading :showing="loading" />
   </q-page>
 </template>
+<style lang="sass" scoped>
+.hire-scrollbar::-webkit-scrollbar
+  display: none
+
+.hire-scrollbar
+  -ms-overflow-style: none
+  scrollbar-width: none
+</style>
 
 <script setup>
 import { computed, ref, onMounted, reactive, watch } from "vue";
@@ -204,7 +287,6 @@ const user = reactive({
   password: "",
   bio: "",
   address: "",
-  social_links: [],
 });
 
 const confirmDetails = reactive({
@@ -215,6 +297,28 @@ const confirmDetails = reactive({
 // Computued Properties
 const authUser = computed(() => store.state.auth.authUser);
 const profile = computed(() => store.state.user.profile);
+
+//Add Social Links
+const social_links = reactive({
+  platform: "",
+  username: "",
+});
+const platforms = ["Facebook", "Twitter", "Instagram", "LinkedIn", "Youtube"];
+const addSocialLink = (platform) => {
+  social_links.platform = platform;
+};
+const saveSocialLink = () => {
+  store.dispatch("user/updateUserProfile", { link: social_links });
+};
+const openLink = (link) => {
+  let url = "https://" + link.platform.toLowerCase() + ".com/";
+  openURL(url + link.username);
+};
+
+// Delete Social Link
+const deleteSocialLink = (link) => {
+  store.dispatch("user/updateUserProfile", { delete: true, link: link });
+};
 
 // Editing Profile
 const editingMode = (authUser) => {
@@ -233,7 +337,6 @@ const saveProfile = () => {
   }
   store.dispatch("user/updateUserProfile", user);
 };
-
 const confirmdUpdate = () => {
   store.dispatch("user/reAuthenticateUser", {
     credential: confirmDetails,
@@ -264,6 +367,12 @@ const fileUploaded = (e) => {
   }
 };
 
+// Get Groups Manage
+const groups_manage = computed(() => store.state.group.groups_manage);
+const getGroupsManage = () => {
+  store.dispatch("group/getGroupsManage");
+};
+
 // Set USer Profile
 const getUser = (id) => {
   store.dispatch("user/getUserProfile", id);
@@ -278,6 +387,7 @@ const showLoading = () => {
 
 onMounted(() => {
   showLoading();
+  getGroupsManage();
   getUser(authUser.value.uid);
 });
 </script>

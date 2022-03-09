@@ -33,7 +33,7 @@ module.exports = configure(function (ctx) {
       "fontawesome-v5",
       // 'eva-icons',
       "themify",
-      // 'line-awesome',
+      "line-awesome",
       // 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
 
       "roboto-font", // optional, you are not bound to it
@@ -94,12 +94,19 @@ module.exports = configure(function (ctx) {
       // directives: [],
 
       // Quasar plugins
-      plugins: ["Loading", "Dialog", "Notify"],
+      plugins: ["Loading", "Dialog", "Notify", "Meta"],
     },
 
     // animations: 'all', // --- includes all animations
     // https://quasar.dev/options/animations
-    animations: ["slideInRight", "slideOutRight"],
+    animations: [
+      "slideInRight",
+      "slideOutRight",
+      "slideInUp",
+      "slideOutDown",
+      "fadeInUp",
+      "fadeOutDown",
+    ],
 
     // https://quasar.dev/quasar-cli/developing-ssr/configuring-ssr
     ssr: {
