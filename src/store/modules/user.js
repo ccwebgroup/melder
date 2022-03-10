@@ -1,8 +1,10 @@
-import { Loading, Dialog, Notify } from "quasar";
+import { Loading, Dialog, Notify, Dark } from "quasar";
 import {
   auth,
   db,
   doc,
+  addDoc,
+  setDoc,
   getDoc,
   getDocs,
   updateProfile,
@@ -32,10 +34,24 @@ const state = {
 };
 
 // Getters
-const getters = {};
+const getters = {
+  getProfile: (state) => {
+    return state.profile;
+  },
+};
 
 // Actions
 const actions = {
+  async addUserProfile({ commit }, user) {
+    console.log;
+    try {
+      const userRef = await setDoc(doc(db, "users", user.id), user);
+      commit("setUserProfile", user);
+    } catch (e) {
+      console.log(e);
+    }
+  },
+
   async getPeopleOnSearch({ commit }, keyword) {
     commit("setSearchResults", null);
     if (keyword) {
@@ -100,7 +116,10 @@ const actions = {
             });
 
             //Relaod the element image source
-            document.querySelector("#profile_avatar").src = url;
+            let el = document.querySelector("#profile_avatar").scroll;
+            if (el) {
+              el.src = url;
+            }
           });
         }
       );

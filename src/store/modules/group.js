@@ -25,6 +25,13 @@ const state = {
 const getters = {};
 
 const actions = {
+  async addMember({}, payload) {
+    const groupRef = doc(db, "groups", payload.group_id);
+    const membersRef = collection(groupRef, "members");
+    const docRef = doc(membersRef, payload.user.id);
+    await setDoc(docRef, payload.user);
+  },
+
   async updateGroupProfile({ commit }, payload) {
     const notif = Notify.create({
       type: "ongoing",
@@ -76,29 +83,28 @@ const actions = {
     commit("setGroupsManage", groups);
   },
 
-  async addGroup({ commit, dispatch }, payload) {
+  async addGroup({ commit, dispatch, rootGetters }, payload) {
     Loading.show();
+    const user = rootGetters["user/getProfile"];
+    const authUser = auth.currentUser;
+    const groupDetails = {
+      creator: user,
+      created: Date.now(),
+      name: payload.name,
+      description: payload.description,
+      photoURL: payload.photo,
+      roles: [{ role_name: "Administrator", settings: { all: true } }],
+    };
+
     try {
-      const docRef = await addDoc(collection(db, "groups"), {
-        creator_id: auth.currentUser.uid,
-        created: Date.now(),
-        name: payload.name,
-        description: payload.description,
-        photoURL: payload.photo,
-        members: [
-          {
-            id: auth.currentUser.uid,
-            role: "Administrator",
-          },
-        ],
-        roles: [{ role_name: "Administrator", settings: { all: true } }],
-      });
-      if (docRef.id) {
+      const groupRef = await addDoc(collection(db, "groups"), groupDetails);
+      if (groupRef.id) {
+        dispatch("addMember", { user: user, group_id: groupRef.id });
         const userRef = doc(db, "users", auth.currentUser.uid);
-        updateDoc(userRef, {
-          groups_manage: arrayUnion({ group_id: docRef.id }),
-        });
-        this.$router.push("/group/" + docRef.id);
+        const groupsManageRef = collection(userRef, "groupsManage");
+        const docRef = doc(groupsManageRef, groupRef.id);
+        await setDoc(docRef, groupDetails);
+        this.$router.push("/group/" + groupRef.id);
       }
       Loading.hide();
     } catch (e) {

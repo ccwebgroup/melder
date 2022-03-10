@@ -31,54 +31,58 @@ const actions = {
     auth.signOut();
   },
 
-  signUpUser({ commit }, payload) {
+  async signUpUser({ dispatch }, payload) {
     Loading.show();
-    createUserWithEmailAndPassword(auth, payload.email, payload.password)
-      .then((userCredential) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        payload.email,
+        payload.password
+      );
+
+      // If user successfully signed up
+      if (userCredential.user) {
         const user = userCredential.user;
-        updateProfile(user, {
-          displayName: payload.displayName,
-        });
-        if (user) {
-          console.log(user);
-          const docRef = setDoc(doc(db, "users", user.uid), {
-            displayName: payload.displayName,
-            photoUrl: user.photoUrl,
-            groups_manage: [],
-          });
-        }
-
-        this.$router.replace("/group/create");
+        //Add and set UserProfile
+        dispatch(
+          "user/addUserProfile",
+          {
+            id: ser.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: null,
+          },
+          { root: true }
+        );
         Loading.hide();
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        let errMessage;
-
-        switch (errorCode) {
-          case "auth/email-already-in-use":
-            errMessage = "Email is already registered!";
-            break;
-          case "auth/invalid-email":
-            errMessage = "Invalid Email.";
-            break;
-          case "auth/operation-not-allowed":
-            errMessage = "Operation is not allowed.";
-            break;
-          case "auth/weak-password":
-            errMessage =
-              "Password is weak. Try putting some symbols and numbers. Should be 8 digits or more.";
-            break;
-        }
-
-        Loading.hide();
-        Dialog.create({
-          title: "Sign Up Error",
-          message: errMessage,
-        }).onOk(() => {
-          // console.log('OK')
-        });
+        this.$router.push("/group/create");
+      }
+    } catch (error) {
+      const errorCode = error.code;
+      let errMessage;
+      switch (errorCode) {
+        case "auth/email-already-in-use":
+          errMessage = "Email is already registered!";
+          break;
+        case "auth/invalid-email":
+          errMessage = "Invalid Email.";
+          break;
+        case "auth/operation-not-allowed":
+          errMessage = "Operation is not allowed.";
+          break;
+        case "auth/weak-password":
+          errMessage =
+            "Password is weak. Try putting some symbols and numbers. Should be 8 digits or more.";
+          break;
+      }
+      Loading.hide();
+      console.log(error);
+      // A Dialog to display Sign up Error
+      Dialog.create({
+        title: "Sign Up Error",
+        message: errMessage,
       });
+    }
   },
 
   loginUser({ commit }, payload) {
@@ -87,6 +91,7 @@ const actions = {
       .then((userCredential) => {
         const user = userCredential.user;
         commit("setAuthUser", user);
+        dispatch("user/getUserProfile", user.uid, { root: true });
         this.$router.push("/home");
         Loading.hide();
       })
@@ -116,17 +121,11 @@ const actions = {
       });
   },
 
-  handleAuthStateChanged({ commit }) {
+  handleAuthStateChanged({ commit, dispatch }) {
     onAuthStateChanged(auth, (user) => {
       if (user) {
+        dispatch("user/getUserProfile", user.uid, { root: true });
         commit("setAuthUser", user);
-        const userRef = doc(db, "users", user.uid);
-        getDoc(userRef).then((docSnap) => {
-          const data = docSnap.data();
-          // set Dark theme status
-          Dark.set(data.darkTheme);
-          commit("user/setUserProfile", data, { root: true });
-        });
       } else {
         this.$router.replace("/login");
       }

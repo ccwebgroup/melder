@@ -18,7 +18,7 @@
             <div class="row">
               <q-space />
               <q-btn
-                @click="editingMode(authUser)"
+                @click="editingMode(profile)"
                 no-caps
                 flat
                 :color="$q.dark.isActive ? 'secondary' : 'primary'"
@@ -27,8 +27,8 @@
               />
             </div>
             <div class="text-center">
-              <q-avatar size="100px" v-if="authUser.photoURL">
-                <img id="profile_avatar" :src="authUser.photoURL"
+              <q-avatar size="100px" v-if="profile.photoURL">
+                <img id="profile_avatar" :src="profile.photoURL"
               /></q-avatar>
               <q-avatar
                 v-else
@@ -36,10 +36,10 @@
                 color="teal"
                 text-color="white"
                 class="text-bold"
-                >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
+                >{{ profile.displayName.charAt(0).toUpperCase() }}</q-avatar
               >
               <div class="text-subtitle2 text-bold q-mt-sm">
-                {{ authUser.displayName }}
+                {{ profile.displayName }}
               </div>
               <div class="text-caption">
                 <q-icon name="email" class="q-mr-sm" /><span>{{
@@ -166,14 +166,14 @@
             />
             <q-avatar @click="uploadFile" color="grey-3" size="100px">
               <q-icon
-                v-show="!authUser.photoURL && !user.photoURL"
+                v-show="!profile.photoURL && !user.photoURL"
                 color="grey"
                 name="fas fa-camera"
               />
               <img
                 class="user_avatar"
-                v-show="authUser.photoURL || user.photoURL"
-                :src="authUser.photoURL"
+                v-show="profile.photoURL || user.photoURL"
+                :src="profile.photoURL"
               />
             </q-avatar>
             <div>

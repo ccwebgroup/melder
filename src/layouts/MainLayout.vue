@@ -75,20 +75,20 @@
         <q-card-section>
           <q-item to="/user/profile">
             <q-item-section avatar>
-              <q-avatar v-if="authUser.photoURL" color="teal">
-                <img :src="authUser.photoURL" alt="Avatar" />
+              <q-avatar v-if="profile.photoURL" color="teal">
+                <img :src="profile.photoURL" alt="Avatar" />
               </q-avatar>
               <q-avatar
                 v-else
                 color="teal"
                 text-color="white"
                 class="text-bold"
-                >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
+                >{{ profile.displayName.charAt(0).toUpperCase() }}</q-avatar
               >
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-subtitle2 text-bold">{{
-                authUser.displayName
+                profile.displayName
               }}</q-item-label>
               <q-item-label
                 caption
@@ -159,7 +159,7 @@
 <script setup>
 import EssentialLink from "components/EssentialLink.vue";
 import { useStore } from "vuex";
-import { defineComponent, ref, computed, watch } from "vue";
+import { defineComponent, ref, computed, watch, onMounted } from "vue";
 import { useQuasar } from "quasar";
 
 const linksList = [
@@ -180,14 +180,14 @@ const linksList = [
 const $q = useQuasar();
 const store = useStore();
 const leftDrawerOpen = ref(false);
-const authUser = computed(() => store.state.auth.authUser);
 const settingsDialog = ref(false);
 const dialog = ref(false);
 const darkTheme = ref();
 
-//Get Auth User Profile details
+//Computed properties
 const profile = computed(() => store.state.user.profile);
 
+// Set Dark theme
 darkTheme.value = profile.value.darkTheme;
 const changeTheme = (value, evt) => {
   $q.dark.set(value);
@@ -198,4 +198,11 @@ const changeTheme = (value, evt) => {
 const logout = () => {
   store.dispatch("auth/logoutUser");
 };
+
+onMounted(() => {
+  // set Dark Theme Profile
+  if (profile.value.darkTheme) {
+    $q.dark.set(true);
+  }
+});
 </script>
