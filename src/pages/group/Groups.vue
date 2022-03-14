@@ -30,6 +30,9 @@
           />
         </div>
         <div class="text-h6 text-bold">Groups You Managed</div>
+        <div v-show="!groups_manage" class="q-mt-sm text-body1 text-grey">
+          Nothing to show . . .
+        </div>
         <div class="q-mt-sm" v-if="groups_manage">
           <div
             v-show="groups_manage"
@@ -57,9 +60,7 @@
                   {{ group.name }}
                 </q-item-label>
                 <q-item-label caption>
-                  <span>{{
-                    group.members.length == 0 ? 0 : group.members.length
-                  }}</span>
+                  <span>{{ group.membersCount }}</span>
                   Members
                 </q-item-label>
               </q-item-section>

@@ -1,5 +1,5 @@
 <template>
-  <q-page padding>
+  <q-page class="flex flex-center">
     <div class="q-pa-lg text-center">
       <img
         class="logo"
@@ -7,18 +7,39 @@
         src="~assets/melder-logo.svg"
         style="width: 120px"
       />
-      <q-form @submit="login" class="q-gutter-md q-mt-md">
-        <q-input v-model="email" type="email" placeholder="Email" />
-        <q-input v-model="password" type="password" placeholder="Password" />
+      <q-form @submit="login" class="q-gutter-y-md q-mt-md">
+        <q-input
+          dense
+          rounded
+          outlined
+          v-model="credentials.email"
+          type="email"
+          placeholder="Email"
+        />
+        <q-input
+          dense
+          rounded
+          outlined
+          v-model="credentials.password"
+          :type="isPwd ? 'password' : 'text'"
+          placeholder="Password"
+        >
+          <template v-slot:append>
+            <q-icon
+              :name="isPwd ? 'visibility' : 'visibility_off'"
+              class="cursor-pointer"
+              @click="isPwd = !isPwd"
+            />
+          </template>
+        </q-input>
         <q-btn
           @submit="login"
           type="submit"
           ripple
-          rounded
-          unelevated
+          flat
           color="primary"
           label="LOG IN"
-          style="width: 150px"
+          size="lg"
         />
       </q-form>
 
@@ -34,26 +55,17 @@
   </q-page>
 </template>
 
-<script>
-import { mapActions } from "vuex";
+<script setup>
+import { ref, reactive } from "vue";
+import { useStore } from "vuex";
 
-export default {
-  data() {
-    return {
-      email: "",
-      password: "",
-    };
-  },
+const store = useStore();
+const isPwd = ref(true);
+const credentials = reactive({
+  email: "",
+  password: "",
+});
 
-  methods: {
-    ...mapActions("auth", ["loginUser"]),
-
-    login() {
-      this.loginUser({
-        email: this.email,
-        password: this.password,
-      });
-    },
-  },
-};
+// Log in User
+const login = () => store.dispatch("auth/loginUser", credentials);
 </script>

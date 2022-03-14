@@ -6,7 +6,33 @@
           <img src="~assets/melder-logo.svg" />
         </q-avatar>
         <q-space />
-        <q-btn @click="dialog = true" flat round size="lg" icon="person" />
+        <div class="q-gutter-x-sm q-my-md">
+          <q-btn
+            @click="notifDialog = true"
+            padding="none"
+            size="lg"
+            dense
+            flat
+            round
+            icon="las la-bell"
+          >
+            <q-badge
+              floating
+              color="red"
+              rounded
+              :label="notifications.length"
+            />
+          </q-btn>
+          <q-btn
+            padding="none"
+            @click="dialog = true"
+            dense
+            flat
+            round
+            size="lg"
+            icon="las la-user-circle"
+          />
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -75,20 +101,20 @@
         <q-card-section>
           <q-item to="/user/profile">
             <q-item-section avatar>
-              <q-avatar v-if="profile.photoURL" color="teal">
-                <img :src="profile.photoURL" alt="Avatar" />
+              <q-avatar v-if="authUser.photoURL">
+                <img :src="authUser.photoURL" alt="Avatar" />
               </q-avatar>
               <q-avatar
                 v-else
                 color="teal"
                 text-color="white"
                 class="text-bold"
-                >{{ profile.displayName.charAt(0).toUpperCase() }}</q-avatar
+                >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
               >
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-subtitle2 text-bold">{{
-                profile.displayName
+                authUser.displayName
               }}</q-item-label>
               <q-item-label
                 caption
@@ -153,13 +179,93 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <!-- Notifications Dialog -->
+    <q-dialog
+      v-model="notifDialog"
+      maximized
+      transition-show="slide-up"
+      transition-hide="slide-down"
+    >
+      <q-card flat>
+        <q-toolbar>
+          <q-btn v-close-popup no-caps flat icon="arrow_back" />
+        </q-toolbar>
+        <div class="text-h6 text-bold q-px-lg">Notifications</div>
+        <q-card-section>
+          <q-card
+            flat
+            v-for="(notif, i) in notifications"
+            :key="i"
+            :class="notif.unread ? 'bg-teal-gradient text-white' : ''"
+          >
+            <q-item>
+              <q-item-section avatar>
+                <q-avatar size="60px" v-if="notif.from.photoURL">
+                  <img :src="notif.from.photoURL" alt="Avatar" />
+                </q-avatar>
+                <q-avatar
+                  v-else
+                  color="teal"
+                  text-color="white"
+                  class="text-bold"
+                  >{{
+                    notif.from.displayName.charAt(0).toUpperCase()
+                  }}</q-avatar
+                >
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-bold q-gutter-x-sm">
+                  <span>{{ notif.from.displayName }}</span>
+                  <span>&bull;</span>
+                  <span class="text-body2">Mar 13</span>
+                </q-item-label>
+                <q-item-label
+                  >invited you to join in
+                  <span class="text-bold">{{
+                    notif.group.name
+                  }}</span></q-item-label
+                >
+              </q-item-section>
+
+              <q-item-section side top>
+                <q-icon name="las la-ellipsis-v" />
+              </q-item-section>
+            </q-item>
+            <div class="q-pa-sm q-gutter-x-sm text-center bg-overlay">
+              <q-btn
+                @click="accept(notif)"
+                padding="xs lg"
+                rounded
+                unelevated
+                dense
+                outline
+                no-caps
+                icon="las la-user-plus"
+                label="Accept"
+              />
+              <q-btn
+                @click="decline(notif)"
+                padding="xs lg"
+                rounded
+                unelevated
+                dense
+                outline
+                no-caps
+                label="Decline"
+              />
+            </div>
+          </q-card>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-layout>
 </template>
 
 <script setup>
 import EssentialLink from "components/EssentialLink.vue";
 import { useStore } from "vuex";
-import { defineComponent, ref, computed, watch, onMounted } from "vue";
+import { defineComponent, ref, computed, watch, onBeforeMount } from "vue";
 import { useQuasar } from "quasar";
 
 const linksList = [
@@ -180,15 +286,27 @@ const linksList = [
 const $q = useQuasar();
 const store = useStore();
 const leftDrawerOpen = ref(false);
+const notifDialog = ref(false);
 const settingsDialog = ref(false);
 const dialog = ref(false);
 const darkTheme = ref();
 
 //Computed properties
-const profile = computed(() => store.state.user.profile);
+// Auth User
+const authUser = computed(() => store.state.auth.authUser);
+// Notifactions
+const notifications = computed(() => store.state.user.notifications);
+
+// Accept Inivite
+const accept = (notif) => store.dispatch("user/acceptInvite", notif);
+// Decline Inivite
+const decline = (notif) => store.dispatch("user/declineInvite", notif);
+
+// Get notifcations
+const getNotif = () => store.dispatch("user/getNotifications");
 
 // Set Dark theme
-darkTheme.value = profile.value.darkTheme;
+darkTheme.value = authUser.value.darkTheme;
 const changeTheme = (value, evt) => {
   $q.dark.set(value);
   store.dispatch("user/setTheme", value);
@@ -199,10 +317,11 @@ const logout = () => {
   store.dispatch("auth/logoutUser");
 };
 
-onMounted(() => {
+onBeforeMount(() => {
   // set Dark Theme Profile
-  if (profile.value.darkTheme) {
+  if (authUser.value.darkTheme) {
     $q.dark.set(true);
   }
+  getNotif();
 });
 </script>

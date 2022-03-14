@@ -18,7 +18,7 @@
             <div class="row">
               <q-space />
               <q-btn
-                @click="editingMode(profile)"
+                @click="editingMode(authUser)"
                 no-caps
                 flat
                 :color="$q.dark.isActive ? 'secondary' : 'primary'"
@@ -27,8 +27,8 @@
               />
             </div>
             <div class="text-center">
-              <q-avatar size="100px" v-if="profile.photoURL">
-                <img id="profile_avatar" :src="profile.photoURL"
+              <q-avatar size="100px" v-if="authUser.photoURL">
+                <img id="profile_avatar" :src="authUser.photoURL"
               /></q-avatar>
               <q-avatar
                 v-else
@@ -36,10 +36,10 @@
                 color="teal"
                 text-color="white"
                 class="text-bold"
-                >{{ profile.displayName.charAt(0).toUpperCase() }}</q-avatar
+                >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
               >
               <div class="text-subtitle2 text-bold q-mt-sm">
-                {{ profile.displayName }}
+                {{ authUser.displayName }}
               </div>
               <div class="text-caption">
                 <q-icon name="email" class="q-mr-sm" /><span>{{
@@ -59,7 +59,10 @@
               >
                 <template v-slot="{ item, index }">
                   <div class="q-pa-sm" :key="index" :class="item.class">
-                    <q-avatar size="60px">
+                    <q-avatar
+                      @click="$router.push('/group/' + item.id)"
+                      size="60px"
+                    >
                       <img :src="item.photoURL" alt="Group Avatar" />
                     </q-avatar>
                   </div>
@@ -68,16 +71,20 @@
               <!-- Bio -->
               <div class="text-subtitle1 text-bold q-mt-sm">Bio</div>
               <div class="text-body2">
-                {{ profile.bio }}
+                <span v-if="authUser.bio">{{ authUser.bio }}</span>
+                <span v-else class="text-grey">No details</span>
               </div>
               <!-- Address -->
               <div class="text-subtitle1 q-mt-md text-bold">Address</div>
-              <div class="text-body2">{{ profile.address }}</div>
+              <div class="text-body2">
+                <span v-if="authUser.address">{{ authUser.address }}</span>
+                <span v-else class="text-grey">No details</span>
+              </div>
               <!-- Social Links -->
               <div class="text-subtitle1 q-mt-md text-bold">Social Links</div>
               <q-list dense class="q-mt-md">
                 <q-item
-                  v-for="link in profile.social_links"
+                  v-for="link in authUser.social_links"
                   :key="link.platform"
                   clickable
                 >
@@ -143,6 +150,7 @@
         </transition>
       </div>
     </transition>
+
     <!-- Edit Profile dialog -->
     <q-dialog
       v-model="editDialog"
@@ -166,14 +174,14 @@
             />
             <q-avatar @click="uploadFile" color="grey-3" size="100px">
               <q-icon
-                v-show="!profile.photoURL && !user.photoURL"
+                v-show="!authUser.photoURL && !user.photoURL"
                 color="grey"
                 name="fas fa-camera"
               />
               <img
                 class="user_avatar"
-                v-show="profile.photoURL || user.photoURL"
-                :src="profile.photoURL"
+                v-show="authUser.photoURL || user.photoURL"
+                :src="authUser.photoURL"
               />
             </q-avatar>
             <div>
@@ -229,6 +237,7 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
     <!-- Confirmation Dialog before changes on email and password -->
     <q-dialog v-model="confirmDialog" persistent>
       <q-card style="min-width: 350px">
@@ -271,7 +280,7 @@
 </style>
 
 <script setup>
-import { computed, ref, onMounted, reactive, watch } from "vue";
+import { computed, ref, onMounted, reactive, watch, onBeforeMount } from "vue";
 import { useStore } from "vuex";
 
 const store = useStore();
@@ -296,7 +305,6 @@ const confirmDetails = reactive({
 
 // Computued Properties
 const authUser = computed(() => store.state.auth.authUser);
-const profile = computed(() => store.state.user.profile);
 
 //Add Social Links
 const social_links = reactive({
@@ -322,12 +330,12 @@ const deleteSocialLink = (link) => {
 
 // Editing Profile
 const editingMode = (authUser) => {
-  user.id = authUser.uid;
+  user.id = authUser.id;
   user.displayName = authUser.displayName;
   user.photoURL = authUser.photoURL;
   user.email = authUser.email;
-  user.bio = profile.value.bio ? profile.value.bio : "";
-  user.address = profile.value.address ? profile.value.address : "";
+  user.bio = authUser.bio ? authUser.bio : "";
+  user.address = authUser.address ? authUser.address : "";
   editDialog.value = true;
 };
 const saveProfile = () => {
@@ -336,6 +344,9 @@ const saveProfile = () => {
     return;
   }
   store.dispatch("user/updateUserProfile", user);
+  setTimeout(() => {
+    user.photoURL = "";
+  }, 2000);
 };
 const confirmdUpdate = () => {
   store.dispatch("user/reAuthenticateUser", {
@@ -373,11 +384,6 @@ const getGroupsManage = () => {
   store.dispatch("group/getGroupsManage");
 };
 
-// Set USer Profile
-const getUser = (id) => {
-  store.dispatch("user/getUserProfile", id);
-};
-
 //Loading State
 const showLoading = () => {
   setTimeout(() => {
@@ -385,9 +391,11 @@ const showLoading = () => {
   }, 1000);
 };
 
+onBeforeMount(() => {
+  getGroupsManage();
+});
+
 onMounted(() => {
   showLoading();
-  getGroupsManage();
-  getUser(authUser.value.uid);
 });
 </script>

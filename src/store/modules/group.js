@@ -1,4 +1,4 @@
-import { Loading, Dialog, Notify } from "quasar";
+import { Loading, Dialog, Notify, date } from "quasar";
 import { useRoute } from "vue-router";
 
 import {
@@ -15,6 +15,13 @@ import {
   query,
   where,
   writeBatch,
+  increment,
+  storage,
+  ref,
+  uploadString,
+  getDownloadURL,
+  deleteDoc,
+  orderBy,
 } from "boot/firebase";
 
 const state = {
@@ -25,14 +32,72 @@ const state = {
 const getters = {};
 
 const actions = {
-  async addMember({}, payload) {
-    const groupRef = doc(db, "groups", payload.group_id);
-    const membersRef = collection(groupRef, "members");
-    const docRef = doc(membersRef, payload.user.id);
-    await setDoc(docRef, payload.user);
+  async removeInviteList({}, groupId) {
+    const groupRef = doc(db, "groups", groupId);
+    await updateDoc(groupRef, {
+      invites: arrayRemove(auth.currentUser.uid),
+    });
   },
 
-  async updateGroupProfile({ commit }, payload) {
+  async getGroupDetails({}, payload) {
+    if (payload.notif) {
+      const groupRef = doc(db, "groups", payload.groupId);
+      const docSnap = await getDoc(groupRef);
+      if (docSnap.exists()) {
+        const group = docSnap.data();
+        group.id = payload.groupId;
+        return group;
+      }
+    }
+  },
+
+  // If user was reauthenticated
+  async softDeleteGroup({}, group_id) {
+    try {
+      const groupRef = doc(db, "groups", group_id);
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const groupMangeRef = collection(userRef, "groupsManage");
+      await updateDoc(groupRef, {
+        softDelete: true,
+      });
+      await updateDoc(doc(groupMangeRef, group_id), {
+        softDelete: true,
+      });
+
+      Notify.create({
+        type: "positive",
+        message: "Succesfully deleted!",
+        timeout: 1000,
+      });
+      this.$router.push("/groups");
+    } catch (err) {
+      Dialog.create({
+        title: "Error",
+        message: err.message,
+      });
+    }
+  },
+
+  async sendGroupInvite({ commit, dispatch }, payload) {
+    const groupRef = doc(db, "groups", payload.groupId);
+    const docSnap = updateDoc(groupRef, {
+      invites: arrayUnion(payload.userId),
+    });
+    dispatch("user/notifyUser", payload, { root: true });
+    commit("user/updateSearch", payload.userId, { root: true });
+  },
+
+  async addMember({}, payload) {
+    const groupRef = doc(db, "groups", payload.groupId);
+    const membersRef = collection(groupRef, "members");
+    const docRef = doc(membersRef, payload.userId);
+    setDoc(docRef, {});
+    await updateDoc(groupRef, {
+      membersCount: increment(1),
+    });
+  },
+
+  async updateGroupProfile({ commit, dispatch }, payload) {
     const notif = Notify.create({
       type: "ongoing",
       message: "Please wait...",
@@ -41,8 +106,13 @@ const actions = {
     });
     const batch = writeBatch(db);
     const docRef = doc(db, "groups", payload.id);
+    batch.update(docRef, { updatedAt: Date.now() });
+
     if (payload.photoURL) {
-      batch.update(docRef, { photoURL: payload.photoURL });
+      dispatch("setGroupAvatar", {
+        id: payload.id,
+        photo: payload.photoURL,
+      });
     }
     if (payload.name) {
       batch.update(docRef, { name: payload.name });
@@ -54,9 +124,9 @@ const actions = {
     const result = await batch.commit();
 
     const groupRef = doc(db, "groups", payload.id);
-    const groupDocSnap = await getDoc(groupRef);
-    const groupData = groupDocSnap.data();
-    groupData.id = groupDocSnap.id;
+    const docSnap = await getDoc(groupRef);
+    const groupData = docSnap.data();
+    groupData.id = docSnap.id;
     commit("setGroupDetails", groupData);
 
     notif({
@@ -66,45 +136,78 @@ const actions = {
     });
   },
 
+  async setGroupAvatar({}, payload) {
+    if (payload.photo) {
+      const avatarsRef = ref(
+        storage,
+        "groups/" + payload.id + "/avatar/" + payload.id
+      );
+      uploadString(avatarsRef, payload.photo, "data_url").then((snapshot) => {
+        getDownloadURL(avatarsRef)
+          .then((url) => {
+            // Update Group Avatar Url
+            const docRef = doc(db, "groups", payload.id);
+            updateDoc(docRef, {
+              photoURL: url,
+            });
+          })
+          .then(() => {
+            //Redirect new Group to profile page
+            if (payload.newGroup) {
+              this.$router.push("/group/" + payload.id);
+            }
+          });
+      });
+    }
+  },
+
   async getGroupsManage({ commit }) {
-    let creator_id = auth.currentUser.uid;
-    const q = query(
-      collection(db, "groups"),
-      where("creator_id", "==", creator_id)
-    );
+    let authUserId = auth.currentUser.uid;
+    const groupsRef = collection(db, "groups");
+    const q = query(groupsRef, where("creatorId", "==", authUserId));
 
     const querySnapshot = await getDocs(q);
     let groups = [];
     querySnapshot.forEach((doc) => {
-      let group = doc.data();
-      group.id = doc.id;
-      groups.push(group);
+      let data = doc.data();
+      data.id = doc.id;
+      if (!data.softDelete) {
+        groups.push(data);
+      }
     });
     commit("setGroupsManage", groups);
   },
 
-  async addGroup({ commit, dispatch, rootGetters }, payload) {
+  async addGroup({ dispatch }, payload) {
     Loading.show();
-    const user = rootGetters["user/getProfile"];
     const authUser = auth.currentUser;
     const groupDetails = {
-      creator: user,
-      created: Date.now(),
+      creatorId: authUser.uid,
+      createdAt: Date.now(),
       name: payload.name,
       description: payload.description,
-      photoURL: payload.photo,
-      roles: [{ role_name: "Administrator", settings: { all: true } }],
+      roles: [
+        {
+          userId: authUser.uid,
+          roleName: "Administrator",
+          settings: { all: true },
+        },
+      ],
     };
 
     try {
       const groupRef = await addDoc(collection(db, "groups"), groupDetails);
       if (groupRef.id) {
-        dispatch("addMember", { user: user, group_id: groupRef.id });
-        const userRef = doc(db, "users", auth.currentUser.uid);
+        dispatch("addMember", { userId: authUser.uid, groupId: groupRef.id });
+        await dispatch("setGroupAvatar", {
+          newGroup: true,
+          id: groupRef.id,
+          photo: payload.photo,
+        });
+        const userRef = doc(db, "users", authUser.uid);
         const groupsManageRef = collection(userRef, "groupsManage");
         const docRef = doc(groupsManageRef, groupRef.id);
-        await setDoc(docRef, groupDetails);
-        this.$router.push("/group/" + groupRef.id);
+        await setDoc(docRef, {});
       }
       Loading.hide();
     } catch (e) {
@@ -125,17 +228,12 @@ const actions = {
 const mutations = {
   setGroupDetails: (state, group) => {
     let authUserId = auth.currentUser.uid;
-    group.members.forEach((member) => {
-      if (member.id == authUserId) {
-        let myRole = member.role;
-        group.roles.forEach((role) => {
-          if (myRole == role.role_name) {
-            group.myRole = role;
-          }
-          state.groupDetails = group;
-        });
+    group.roles.forEach((role) => {
+      if (role.userId == authUserId) {
+        group.hasRole = role;
       }
     });
+    state.groupDetails = group;
   },
   setGroupsManage: (state, data) => (state.groups_manage = data),
 };

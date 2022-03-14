@@ -17,7 +17,7 @@ import {
 import { Loading, Dialog, Dark } from "quasar";
 
 const state = {
-  authUser: {},
+  authUser: null,
 };
 
 const getters = {
@@ -47,8 +47,8 @@ const actions = {
         dispatch(
           "user/addUserProfile",
           {
-            id: ser.uid,
-            displayName: user.displayName,
+            id: user.uid,
+            displayName: payload.displayName,
             email: user.email,
             photoURL: null,
           },
@@ -85,12 +85,11 @@ const actions = {
     }
   },
 
-  loginUser({ commit }, payload) {
+  loginUser({ commit, dispatch }, payload) {
     Loading.show();
     signInWithEmailAndPassword(auth, payload.email, payload.password)
       .then((userCredential) => {
         const user = userCredential.user;
-        commit("setAuthUser", user);
         dispatch("user/getUserProfile", user.uid, { root: true });
         this.$router.push("/home");
         Loading.hide();
@@ -115,17 +114,24 @@ const actions = {
         Dialog.create({
           title: "Login Error",
           message: errMessage,
-        }).onOk(() => {
-          // console.log('OK')
         });
       });
+  },
+
+  async getAuthUserProfile({ commit }, id) {
+    const userRef = doc(db, "users", id);
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists()) {
+      const user = docSnap.data();
+      user.id = id;
+      commit("setAuthUser", user);
+    }
   },
 
   handleAuthStateChanged({ commit, dispatch }) {
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        dispatch("user/getUserProfile", user.uid, { root: true });
-        commit("setAuthUser", user);
+        dispatch("getAuthUserProfile", user.uid);
       } else {
         this.$router.replace("/login");
       }

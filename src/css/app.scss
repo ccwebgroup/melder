@@ -5,6 +5,33 @@ body {
   font-family: "Poppins", sans-serif;
 }
 
+.bg-overlay {
+  background: #01072b5d !important;
+}
+
+.bg-teal-gradient {
+  background: rgb(31, 152, 209);
+  background: -moz-radial-gradient(
+    circle,
+    rgba(31, 152, 209, 1) 0%,
+    rgba(37, 170, 214, 1) 49%,
+    rgba(0, 212, 255, 1) 100%
+  );
+  background: -webkit-radial-gradient(
+    circle,
+    rgba(31, 152, 209, 1) 0%,
+    rgba(37, 170, 214, 1) 49%,
+    rgba(0, 212, 255, 1) 100%
+  );
+  background: radial-gradient(
+    circle,
+    rgba(31, 152, 209, 1) 0%,
+    rgba(37, 170, 214, 1) 49%,
+    rgba(0, 212, 255, 1) 100%
+  );
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#1f98d1",endColorstr="#00d4ff",GradientType=1);
+}
+
 .router-link {
   text-decoration: none;
 }

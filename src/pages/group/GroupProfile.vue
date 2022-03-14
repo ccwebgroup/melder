@@ -3,6 +3,7 @@
     <q-toolbar :class="$q.dark.isActive ? '' : 'text-dark'">
       <q-btn @click="$router.go(-1)" round flat icon="arrow_back" />
     </q-toolbar>
+
     <transition
       appear
       enter-active-class="animated fadeIn"
@@ -11,10 +12,10 @@
       <div v-show="!loading">
         <q-item>
           <q-item-section>
-            <q-avatar size="100px" v-if="groupDetails.photoURL">
-              <img :src="groupDetails.photoURL"
+            <q-avatar size="100px" v-show="groupDetails.photoURL">
+              <img id="group_avatar" :src="groupDetails.photoURL"
             /></q-avatar>
-            <div v-else>
+            <div v-show="!groupDetails.photoURL">
               <q-avatar
                 size="100px"
                 color="teal"
@@ -24,11 +25,12 @@
               >
             </div>
           </q-item-section>
+
           <!-- Role Buttons -->
           <q-item-section side>
             <div class="q-gutter-md">
               <q-btn
-                v-if="groupDetails.myRole.settings.all"
+                v-if="groupDetails.hasRole.settings.all"
                 @click="adminDialog = true"
                 dense
                 outline
@@ -37,10 +39,10 @@
               />
               <q-btn
                 v-if="
-                  groupDetails.myRole.settings.all ||
-                  groupDetails.myRole.settings.canAdd
+                  groupDetails.hasRole.settings.all ||
+                  groupDetails.hasRole.settings.canAdd
                 "
-                @click="addMemberDialog = true"
+                @click="openAddMemberDialog"
                 dense
                 outline
                 round
@@ -50,7 +52,6 @@
             </div>
           </q-item-section>
         </q-item>
-
         <div class="text-subtitle2 text-bold q-px-md q-mb-sm">
           {{ groupDetails.name }}
         </div>
@@ -113,7 +114,7 @@
                 <q-icon name="ti-trash" />
               </q-item-section>
               <q-item-section class="text-subtitle1"
-                >Delete Group Permanently</q-item-section
+                >Delete Group</q-item-section
               >
             </q-item>
           </q-list>
@@ -159,7 +160,7 @@
           </q-input>
         </div>
         <q-card>
-          <q-card-section v-show="!searching">
+          <q-card-section v-if="searchResults">
             <!-- Search Results -->
             <transition
               appear
@@ -167,6 +168,9 @@
               leave-active-class="animated fadeOut"
             >
               <div>
+                <div v-show="searchResults.length == 0" class="text-subtitle2">
+                  Search not found.
+                </div>
                 <q-list dense>
                   <q-item v-for="user in searchResults" :key="user.id">
                     <q-item-section avatar>
@@ -189,7 +193,18 @@
                       }}</q-item-label>
                     </q-item-section>
                     <q-item-section side>
-                      <q-btn round flat icon="las la-user-plus" />
+                      <q-btn
+                        @click="invite(user.id)"
+                        :disable="user.invited"
+                        round
+                        flat
+                        :color="user.invited ? 'positive' : ''"
+                        :icon="
+                          user.invited
+                            ? 'las la-user-check'
+                            : 'las la-user-plus'
+                        "
+                      />
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -305,7 +320,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, reactive, watch } from "vue";
+import { onMounted, ref, computed, reactive, watch, onBeforeMount } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from "vuex";
 
@@ -322,7 +337,7 @@ const currentGroup = reactive({
   photoURL: "",
 });
 const adminDialog = ref(false);
-const addMemberDialog = ref(true);
+const addMemberDialog = ref(false);
 const editDialog = ref(false);
 const disableUpdate = ref(true);
 const confirmDialog = ref(false);
@@ -346,21 +361,40 @@ watch(search, (value, oldValue) => {
     searching.value = true;
     getPeople();
   }
+  if (!value) {
+    getPeople();
+  }
 });
+
 watch(searchResults, (value, oldValue) => {
   if (value) {
     setTimeout(() => {
       searching.value = false;
-    }, 900);
+    }, 700);
   }
 });
 
-// Get People on Search
-const getPeople = () => {
-  store.dispatch("user/getPeopleOnSearch", search.value);
+const openAddMemberDialog = () => {
+  store.dispatch("user/getPeopleOnSearch", {});
+  addMemberDialog.value = true;
 };
 
-// Delete Group permanently
+// Invite User
+const invite = (id) =>
+  store.dispatch("group/sendGroupInvite", {
+    userId: id,
+    groupId: groupDetails.value.id,
+  });
+
+// Get People on Search
+const getPeople = () => {
+  store.dispatch("user/getPeopleOnSearch", {
+    keyword: search.value,
+    groupId: groupDetails.value.id,
+  });
+};
+
+// Delete Group
 const confirmedDelete = () => {
   store.dispatch("user/reAuthenticateUser", {
     credential: confirmDetails,
@@ -380,6 +414,7 @@ const editingMode = (group) => {
 const saveProfile = () => {
   store.dispatch("group/updateGroupProfile", currentGroup);
 };
+
 // Get Group Details
 const getDetails = () => {
   store.dispatch("group/viewGroupProfile", route.params.id);
@@ -409,8 +444,11 @@ const showLoading = () => {
   }, 1000);
 };
 
+onBeforeMount(() => {
+  getDetails();
+});
+
 onMounted(() => {
   showLoading();
-  getDetails();
 });
 </script>

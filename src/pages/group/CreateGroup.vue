@@ -4,7 +4,7 @@
       <q-btn @click="$router.back()" no-caps flat icon="arrow_back" />
     </q-toolbar>
     <div class="text-center q-mx-md">
-      <div class="text-h6 q-my-md">Create Group</div>
+      <div class="text-h6 q-mb-sm">Create Group</div>
       <input
         @change="fileUploaded"
         type="file"
@@ -53,9 +53,6 @@
         class="q-mt-md"
         label="Join Group"
       />
-      <div class="text-right q-mt-md">
-        <q-btn to="/home" flat label="Skip" />
-      </div>
     </div>
   </q-page>
 </template>
