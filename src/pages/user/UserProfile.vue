@@ -52,6 +52,18 @@
             <div>
               <!-- Groups -->
               <div class="text-subtitle1 text-bold">Groups</div>
+              <div v-show="!groups_manage || !groups_manage.length">
+                <q-btn
+                  to="/group/create"
+                  no-caps
+                  flat
+                  align="left"
+                  class="full-width"
+                  color="primary"
+                  icon="las la-plus-circle"
+                  label="Create a group"
+                />
+              </div>
               <q-virtual-scroll
                 :items="groups_manage"
                 virtual-scroll-horizontal
@@ -82,6 +94,13 @@
               </div>
               <!-- Social Links -->
               <div class="text-subtitle1 q-mt-md text-bold">Social Links</div>
+              <div
+                v-show="!authUser.social_links || !authUser.social_links.length"
+                class="text-subtitle1 text-grey text-center"
+              >
+                <span>Add some links... </span>
+                <q-icon size="20px" color="primary" name="fas fa-mug-hot" />
+              </div>
               <q-list dense class="q-mt-md">
                 <q-item
                   v-for="link in authUser.social_links"

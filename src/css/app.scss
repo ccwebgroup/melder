@@ -6,30 +6,19 @@ body {
 }
 
 .bg-overlay {
-  background: #01072b5d !important;
+  background: #01072b48 !important;
+}
+
+.bg-blue-gradient {
+  background: linear-gradient(135deg, #0cb7ed 0%, #0470dc 100%);
 }
 
 .bg-teal-gradient {
-  background: rgb(31, 152, 209);
-  background: -moz-radial-gradient(
-    circle,
-    rgba(31, 152, 209, 1) 0%,
-    rgba(37, 170, 214, 1) 49%,
-    rgba(0, 212, 255, 1) 100%
-  );
-  background: -webkit-radial-gradient(
-    circle,
-    rgba(31, 152, 209, 1) 0%,
-    rgba(37, 170, 214, 1) 49%,
-    rgba(0, 212, 255, 1) 100%
-  );
-  background: radial-gradient(
-    circle,
-    rgba(31, 152, 209, 1) 0%,
-    rgba(37, 170, 214, 1) 49%,
-    rgba(0, 212, 255, 1) 100%
-  );
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#1f98d1",endColorstr="#00d4ff",GradientType=1);
+  background: linear-gradient(135deg, #0ac2c0 0%, #0583d2 100%);
+}
+
+.border-top-rounded {
+  border-radius: 30px 30px 0px 0px !important;
 }
 
 .router-link {

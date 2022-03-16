@@ -12,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
+  arrayRemove,
   query,
   where,
   writeBatch,
@@ -20,6 +21,7 @@ import {
   ref,
   uploadString,
   getDownloadURL,
+  serverTimestamp,
   deleteDoc,
   orderBy,
 } from "boot/firebase";
@@ -27,13 +29,18 @@ import {
 const state = {
   groupDetails: null,
   groups_manage: null,
+  inviteCodes: null,
 };
 
-const getters = {};
+const getters = {
+  getGroupDetails: (state) => state.groupDetails,
+  getGroupsManage: (state) => state.groups_manage,
+  getInviteCodes: (state) => state.inviteCodes,
+};
 
 const actions = {
-  async removeInviteList({}, groupId) {
-    const groupRef = doc(db, "groups", groupId);
+  async deleteInviteList({}, notif) {
+    const groupRef = doc(db, "groups", notif.groupId);
     await updateDoc(groupRef, {
       invites: arrayRemove(auth.currentUser.uid),
     });
@@ -83,7 +90,7 @@ const actions = {
     const docSnap = updateDoc(groupRef, {
       invites: arrayUnion(payload.userId),
     });
-    dispatch("user/notifyUser", payload, { root: true });
+    dispatch("user/addUserNotification", payload, { root: true });
     commit("user/updateSearch", payload.userId, { root: true });
   },
 
@@ -91,9 +98,38 @@ const actions = {
     const groupRef = doc(db, "groups", payload.groupId);
     const membersRef = collection(groupRef, "members");
     const docRef = doc(membersRef, payload.userId);
-    setDoc(docRef, {});
+    setDoc(docRef, { memberSince: serverTimestamp() });
     await updateDoc(groupRef, {
       membersCount: increment(1),
+    });
+  },
+
+  async getInviteCodes({ commit }, payload) {
+    const codeRef = collection(db, "inviteCodes");
+    const q = query(
+      codeRef,
+      where("creatorId", "==", auth.currentUser.uid),
+      where("groupId", "==", payload.groupId),
+      where("expiration", "==", payload.expiration)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const inviteCodes = [];
+    querySnapshot.forEach((docSnap) => {
+      let inviteCode = docSnap.data();
+      inviteCode.id = docSnap.id;
+      inviteCodes.push(inviteCode);
+    });
+
+    commit("setInviteCodes", inviteCodes);
+  },
+
+  async addInviteCode({}, payload) {
+    const codeRef = await addDoc(collection(db, "inviteCodes"), {
+      createdAt: serverTimestamp(),
+      creatorId: auth.currentUser.uid,
+      expiration: payload.expiration,
+      groupId: payload.groupId,
     });
   },
 
@@ -183,7 +219,7 @@ const actions = {
     const authUser = auth.currentUser;
     const groupDetails = {
       creatorId: authUser.uid,
-      createdAt: Date.now(),
+      createdAt: serverTimestamp(),
       name: payload.name,
       description: payload.description,
       roles: [
@@ -198,16 +234,28 @@ const actions = {
     try {
       const groupRef = await addDoc(collection(db, "groups"), groupDetails);
       if (groupRef.id) {
+        // Generate an invite code that does not expire
+        dispatch("addInviteCode", {
+          expiration: false,
+          groupId: groupRef.id,
+        });
+        // Add Creator as Admin
         dispatch("addMember", { userId: authUser.uid, groupId: groupRef.id });
+        // Set Group Avatar save to Storage
         await dispatch("setGroupAvatar", {
           newGroup: true,
           id: groupRef.id,
           photo: payload.photo,
         });
-        const userRef = doc(db, "users", authUser.uid);
-        const groupsManageRef = collection(userRef, "groupsManage");
-        const docRef = doc(groupsManageRef, groupRef.id);
-        await setDoc(docRef, {});
+        // Add the Group to User's Groups Manage
+        dispatch(
+          "user/addGroupManage",
+          {
+            userId: authUser.uid,
+            groupId: groupRef.id,
+          },
+          { root: true }
+        );
       }
       Loading.hide();
     } catch (e) {
@@ -216,7 +264,7 @@ const actions = {
     }
   },
 
-  async viewGroupProfile({ commit }, group_id) {
+  async getGroupProfile({ commit }, group_id) {
     const docRef = doc(db, "groups", group_id);
     const docSnap = await getDoc(docRef);
     const groupData = docSnap.data();
@@ -226,6 +274,7 @@ const actions = {
 };
 
 const mutations = {
+  setInviteCodes: (state, codes) => (state.inviteCodes = codes),
   setGroupDetails: (state, group) => {
     let authUserId = auth.currentUser.uid;
     group.roles.forEach((role) => {

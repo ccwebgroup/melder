@@ -35,63 +35,95 @@ import { isInDestructureAssignment } from "@vue/compiler-core";
 // State
 const state = {
   profile: null,
-  authUser: null,
+  notifications: [],
   searchResults: null,
 };
 
 // Getters
 const getters = {
-  getProfile: (state) => {
-    return state.profile;
-  },
+  getProfile: (state) => state.profile,
+  getNotifications: (state) => state.notifications,
 };
 
 // Actions
 const actions = {
-  async deleteNotification({}, notif) {
-    const userRef = doc(db, "users", auth.currentUser.uid);
-    updateDoc(userRef, {
-      notifications: arrayRemove(notif),
-    }).then(() => {
-      commit("setNotification", notif);
-    });
+  async addGroupManage({}, payload) {
+    const userRef = doc(db, "users", payload.userId);
+    const groupsManageRef = collection(userRef, "groupsManage");
+    const docRef = doc(groupsManageRef, payload.groupId);
+    await setDoc(docRef, {});
   },
 
   async acceptInvite({ dispatch }, notif) {
+    const authUserId = auth.currentUser.uid;
     const groupRef = doc(db, "groups", notif.groupId);
+    //Add user to the group
     dispatch(
       "group/addMember",
       { groupId: notif.groupId, userId: auth.currentUser.uid },
       { root: true }
     ).then(() => {
+      //Add group to users Joined Groups list
+      const joinedGroupsRef = doc(
+        collection(doc(db, "users", authUserId), "joinedGroups"),
+        notif.groupId
+      );
+      setDoc(joinedGroupsRef, {});
       //Remove Notification
-      dispatch("updateNotification", notif);
+      dispatch("deleteNotification", notif);
       //Remove from the group's invite list
-      dispatch("group/removeInviteList", notif.groupId, { root: true });
+      dispatch("group/deleteInviteList", notif, { root: true });
     });
   },
 
-  async declineInvite({}, groupId) {
-    console.log(groupId);
+  async declineInvite({ dispatch }, notif) {
+    //Remove Notification
+    dispatch("deleteNotification", notif);
+    //Remove from the group's invite list
+    dispatch("group/deleteInviteList", notif, { root: true });
+  },
+
+  async deleteNotification({}, notif) {
+    const notifRef = doc(
+      collection(doc(db, "users", auth.currentUser.uid), "notifications"),
+      notif.id
+    );
+    deleteDoc(notifRef);
   },
 
   async getNotifications({ commit, dispatch }) {
-    const userRef = doc(db, "users", auth.currentUser.uid);
-    const unsub = await onSnapshot(userRef, (doc) => {
-      const notif = doc.data().notifications;
-      notif.forEach((item) => {
-        if (item.type === "group-invite") {
-          dispatch("getOtherUser", item.from).then((user) => {
-            item.from = user;
-          });
-          dispatch(
-            "group/getGroupDetails",
-            { groupId: item.groupId, notif: true },
-            { root: true }
-          ).then((group) => (item.group = group));
+    const notifRef = collection(
+      doc(db, "users", auth.currentUser.uid),
+      "notifications"
+    );
+    const q = query(notifRef, orderBy("createdAt"));
+    const unsub = await onSnapshot(notifRef, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const notif = change.doc.data();
+          notif.id = change.doc.id;
+          if (notif.type === "group-invite") {
+            dispatch("getOtherUser", notif.from).then((user) => {
+              notif.from = user;
+            });
+            dispatch(
+              "group/getGroupDetails",
+              { groupId: notif.groupId, notif: true },
+              { root: true }
+            )
+              .then((group) => (notif.group = group))
+              .then(() => {
+                commit("setNotification", notif);
+              });
+          }
+        }
+        if (change.type === "modified") {
+          console.log("modified");
+        }
+        if (change.type === "removed") {
+          commit("removeNotification", change.doc.id);
         }
       });
-      commit("setNotification", notif);
     });
   },
 
@@ -105,18 +137,18 @@ const actions = {
     }
   },
 
-  async notifyUser({}, payload) {
+  async addUserNotification({}, payload) {
     const authUserId = auth.currentUser.uid;
-    const userRef = doc(db, "users", payload.userId);
+    const notifRef = doc(
+      collection(doc(db, "users", payload.userId), "notifications")
+    );
 
-    await updateDoc(userRef, {
-      notifications: arrayUnion({
-        createdAt: Date.now(),
-        type: "group-invite",
-        from: authUserId,
-        groupId: payload.groupId,
-        unread: false,
-      }),
+    await setDoc(notifRef, {
+      createdAt: serverTimestamp(),
+      type: "group-invite",
+      from: authUserId,
+      groupId: payload.groupId,
+      unread: true,
     });
   },
 
@@ -146,11 +178,22 @@ const actions = {
       querySnapshot.forEach((docSnap) => {
         let user = docSnap.data();
         user.id = docSnap.id;
-        // Check if user was invited
+
         const groupRef = doc(db, "groups", payload.groupId);
+        // Check if user is a member
+        const membersRef = collection(groupRef, "members");
+        getDocs(membersRef).then((membersSnap) => {
+          membersSnap.forEach((memDoc) => {
+            if (memDoc.id == docSnap.id) {
+              user.alreadyMember = true;
+            }
+          });
+        });
+
         getDoc(groupRef).then((groupSnapData) => {
           const group = groupSnapData.data();
           if (group.invites) {
+            // Check if user was invited
             if (group.invites.includes(docSnap.id)) {
               user.invited = true;
             }
@@ -310,23 +353,31 @@ const actions = {
     }
   },
 
-  async setTheme({ dispatch }, value) {
+  async setTheme({ dispatch, commit }, value) {
     const authUser = auth.currentUser;
     const userRef = doc(db, "users", authUser.uid);
     const docSnap = await updateDoc(userRef, {
       darkTheme: value,
     });
+    console.log(value);
     dispatch("getUserProfile", authUser.uid);
+    commit("auth/updateAuthUserTheme", value, { root: true });
   },
 };
 
 // Mutations
 const mutations = {
-  updateNotification: (state, notif) => {
-    state.notifications.filter((item) => item !== notif);
+  removeNotification: (state, notifId) => {
+    state.notifications = state.notifications.filter(
+      (item) => item.id !== notifId
+    );
   },
-  setNotification: (state, notifications) =>
-    (state.notifications = notifications),
+  setNotification: (state, notif) => {
+    const index = state.notifications.findIndex((item) => item.id === notif.id);
+    if (index === -1) {
+      state.notifications.unshift(notif);
+    }
+  },
   setSearchResults: (state, results) => (state.searchResults = results),
   setUserProfile: (state, user) => (state.profile = user),
   updateSearch: (state, userId) => {

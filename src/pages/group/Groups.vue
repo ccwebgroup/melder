@@ -5,7 +5,7 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <div v-show="!loading">
+      <div v-show="!loading" class="q-px-sm">
         <div class="q-mb-md q-gutter-x-md">
           <q-btn
             to="/group/create"
@@ -29,9 +29,14 @@
             style="width: 120px"
           />
         </div>
-        <div class="text-h6 text-bold">Groups You Managed</div>
-        <div v-show="!groups_manage" class="q-mt-sm text-body1 text-grey">
-          Nothing to show . . .
+        <div class="text-h6">Groups You Managed</div>
+        <div
+          v-show="!groups_manage || !groups_manage.length"
+          class="q-mt-md text-center text-body1 text-grey"
+        >
+          <q-icon size="lg" color="primary" name="las la-parachute-box" />
+          <div class="text-body1">No groups yet.</div>
+          <div>Create and invite people!</div>
         </div>
         <div class="q-mt-sm" v-if="groups_manage">
           <div
@@ -41,9 +46,9 @@
           >
             <q-item :to="'/group/' + group.id">
               <q-item-section avatar>
-                <q-avatar v-if="group.photoURL">
-                  <img :src="group.photoURL"
-                /></q-avatar>
+                <q-avatar size="60px" v-if="group.photoURL">
+                  <img :src="group.photoURL" />
+                </q-avatar>
                 <div v-else>
                   <q-avatar
                     v-if="group.name"
@@ -56,9 +61,9 @@
               </q-item-section>
 
               <q-item-section>
-                <q-item-label class="text-subtitle2">
-                  {{ group.name }}
-                </q-item-label>
+                <q-item-label class="text-subtitle2 text-bold">{{
+                  group.name
+                }}</q-item-label>
                 <q-item-label caption>
                   <span>{{ group.membersCount }}</span>
                   Members

@@ -13,9 +13,9 @@
         <q-item>
           <q-item-section>
             <q-avatar size="100px" v-show="groupDetails.photoURL">
-              <img id="group_avatar" :src="groupDetails.photoURL"
-            /></q-avatar>
-            <div v-show="!groupDetails.photoURL">
+              <img id="group_avatar" :src="groupDetails.photoURL" />
+            </q-avatar>
+            <div v-if="!groupDetails.photoURL">
               <q-avatar
                 size="100px"
                 color="teal"
@@ -27,10 +27,10 @@
           </q-item-section>
 
           <!-- Role Buttons -->
-          <q-item-section side>
+          <q-item-section v-if="groupDetails.hasRole" side>
             <div class="q-gutter-md">
               <q-btn
-                v-if="groupDetails.hasRole.settings.all"
+                v-show="groupDetails.hasRole.settings.all"
                 @click="adminDialog = true"
                 dense
                 outline
@@ -38,7 +38,7 @@
                 icon="admin_panel_settings"
               />
               <q-btn
-                v-if="
+                v-show="
                   groupDetails.hasRole.settings.all ||
                   groupDetails.hasRole.settings.canAdd
                 "
@@ -49,6 +49,27 @@
                 icon="person_add"
               />
               <q-btn dense outline round icon="notifications_none" />
+            </div>
+          </q-item-section>
+          <q-item-section v-else side>
+            <div class="column q-gutter-y-sm">
+              <q-btn
+                unelevated
+                dense
+                class="bg-teal-gradient"
+                padding="xs md"
+                icon="las la-user-plus"
+                label="Accept"
+                no-caps
+              />
+              <q-btn
+                dense
+                outline
+                rounded
+                padding="xs lg"
+                label="Decline"
+                no-caps
+              />
             </div>
           </q-item-section>
         </q-item>
@@ -130,35 +151,29 @@
       transition-hide="slide-down"
     >
       <q-card>
-        <q-toolbar :class="$q.dark.isActive ? '' : 'text-dark'">
-          <q-btn v-close-popup no-caps flat icon="arrow_back" />
-        </q-toolbar>
-        <div class="q-px-md">
-          <div class="text-h6 text-bold">Invite</div>
-          <q-list>
-            <q-item clickable v-ripple>
-              <q-item-section avatar>
-                <q-icon name="ti-key" />
-              </q-item-section>
-              <q-item-section class="text-subtitle1"
-                >Get Invite Code</q-item-section
-              >
-            </q-item>
-          </q-list>
-          <q-input
-            v-model="search"
-            debounce="500"
-            dense
-            rounded
-            outlined
-            type="search"
-            placeholder="Search"
-          >
-            <template v-slot:append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </div>
+        <q-card class="fixed-top">
+          <q-toolbar :class="$q.dark.isActive ? '' : 'text-dark'">
+            <q-btn v-close-popup no-caps flat icon="arrow_back" />
+          </q-toolbar>
+          <div class="q-px-md q-mb-md">
+            <div class="text-h6 text-bold q-mb-sm">Invite</div>
+            <q-input
+              v-model="search"
+              debounce="500"
+              dense
+              rounded
+              outlined
+              type="search"
+              placeholder="Search"
+            >
+              <template v-slot:append>
+                <q-icon name="search" />
+              </template>
+            </q-input>
+          </div>
+        </q-card>
+
+        <!-- Search Results -->
         <q-card>
           <q-card-section v-if="searchResults">
             <!-- Search Results -->
@@ -182,18 +197,18 @@
                         color="teal"
                         text-color="white"
                         class="text-bold"
-                        >{{
-                          user.displayName.charAt(0).toUpperCase()
-                        }}</q-avatar
                       >
+                        {{ user.displayName.charAt(0).toUpperCase() }}
+                      </q-avatar>
                     </q-item-section>
                     <q-item-section>
-                      <q-item-label class="text-subtitle2">{{
-                        user.displayName
-                      }}</q-item-label>
+                      <q-item-label class="text-subtitle2">
+                        {{ user.displayName }}
+                      </q-item-label>
                     </q-item-section>
                     <q-item-section side>
                       <q-btn
+                        v-if="!user.alreadyMember"
                         @click="invite(user.id)"
                         :disable="user.invited"
                         round
@@ -205,6 +220,7 @@
                             : 'las la-user-plus'
                         "
                       />
+                      <q-icon v-else name="las la-check" color="positive" />
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -212,6 +228,78 @@
             </transition>
           </q-card-section>
           <q-inner-loading color="primary" :showing="searching" />
+        </q-card>
+
+        <div class="q-pa-lg">
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+          <span
+            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
+            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
+            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
+            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
+          >
+        </div>
+
+        <q-card class="fixed-bottom q-py-md">
+          <q-card-section>
+            <div class="text-body1 q-mb-sm">Get invite code</div>
+            <q-btn-group outline>
+              <q-btn
+                outline
+                padding="md lg"
+                color="primary"
+                label="73hm66BS7LmcvGplA7Tr"
+              />
+              <q-btn outline color="primary" icon="settings" />
+            </q-btn-group>
+          </q-card-section>
         </q-card>
       </q-card>
     </q-dialog>
@@ -323,28 +411,29 @@
 import { onMounted, ref, computed, reactive, watch, onBeforeMount } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from "vuex";
-
-const search = ref();
-const store = useStore();
-const route = useRoute();
-const tab = ref("");
-const loading = ref(true);
-const searching = ref(false);
 const currentGroup = reactive({
   id: "",
   name: "",
   description: "",
   photoURL: "",
 });
-const adminDialog = ref(false);
-const addMemberDialog = ref(false);
-const editDialog = ref(false);
-const disableUpdate = ref(true);
-const confirmDialog = ref(false);
 const confirmDetails = reactive({
   email: "",
   password: "",
 });
+
+const search = ref(),
+  store = useStore(),
+  route = useRoute(),
+  tab = ref(""),
+  loading = ref(true),
+  searching = ref(false),
+  disableUpdate = ref(true);
+// Dialogs
+const adminDialog = ref(false),
+  addMemberDialog = ref(false),
+  editDialog = ref(false),
+  confirmDialog = ref(false);
 
 // Store State as a computed property
 const searchResults = computed(() => store.state.user.searchResults);
@@ -377,6 +466,14 @@ watch(searchResults, (value, oldValue) => {
 const openAddMemberDialog = () => {
   store.dispatch("user/getPeopleOnSearch", {});
   addMemberDialog.value = true;
+};
+
+// Get invite codes
+const getCodes = () => {
+  store.dispatch("group/getInviteCodes", {
+    userId: id,
+    groupId: groupDetails.value.id,
+  });
 };
 
 // Invite User
@@ -417,7 +514,7 @@ const saveProfile = () => {
 
 // Get Group Details
 const getDetails = () => {
-  store.dispatch("group/viewGroupProfile", route.params.id);
+  store.dispatch("group/getGroupProfile", route.params.id);
 };
 
 //Image Upload
@@ -446,9 +543,6 @@ const showLoading = () => {
 
 onBeforeMount(() => {
   getDetails();
-});
-
-onMounted(() => {
   showLoading();
 });
 </script>

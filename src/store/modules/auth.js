@@ -21,7 +21,7 @@ const state = {
 };
 
 const getters = {
-  getUser: (state) => {
+  getauthUser: (state) => {
     return state.authUser;
   },
 };
@@ -140,6 +140,9 @@ const actions = {
 };
 
 const mutations = {
+  updateAuthUserTheme: (state, value) => {
+    state.authUser.darkTheme = value;
+  },
   setAuthUser: (state, user) => {
     state.authUser = user;
   },

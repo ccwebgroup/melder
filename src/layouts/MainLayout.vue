@@ -2,9 +2,12 @@
   <q-layout view="lHh Lpr lFf">
     <q-header :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'">
       <q-toolbar :class="$q.dark.isActive ? '' : 'text-dark'">
-        <q-avatar>
+        <q-avatar size="30px" class="q-mr-lg">
           <img src="~assets/melder-logo.svg" />
         </q-avatar>
+        <div class="text-h5 text-bold">
+          {{ $route.name }}
+        </div>
         <q-space />
         <div class="q-gutter-x-sm q-my-md">
           <q-btn
@@ -17,6 +20,7 @@
             icon="las la-bell"
           >
             <q-badge
+              v-if="notifications.length"
               floating
               color="red"
               rounded
@@ -74,13 +78,13 @@
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
-        <q-item-label header> Melder Logo </q-item-label>
+        <q-item-label header>Melder Logo</q-item-label>
 
         <!-- <EssentialLink
           v-for="link in essentialLinks"
           :key="link.title"
           v-bind="link"
-        /> -->
+        />-->
       </q-list>
     </q-drawer>
 
@@ -90,14 +94,15 @@
       </router-view>
     </q-page-container>
 
-    <!-- User Profile Menu Dialog -->
+    <!-- User Menu Dialog -->
     <q-dialog
+      full-width
       v-model="dialog"
       position="bottom"
       transition-show="slide-up"
       transition-hide="slide-down"
     >
-      <q-card>
+      <q-card class="border-top-rounded">
         <q-card-section>
           <q-item to="/user/profile">
             <q-item-section avatar>
@@ -113,9 +118,9 @@
               >
             </q-item-section>
             <q-item-section>
-              <q-item-label class="text-subtitle2 text-bold">{{
-                authUser.displayName
-              }}</q-item-label>
+              <q-item-label class="text-subtitle2 text-bold">
+                {{ authUser.displayName }}
+              </q-item-label>
               <q-item-label
                 caption
                 :class="$q.dark.isActive ? 'text-secondary' : 'text-primary'"
@@ -127,6 +132,7 @@
         <div class="text-center">
           <q-separator />
           <q-btn
+            padding="md"
             @click="
               settingsDialog = true;
               dialog = false;
@@ -137,6 +143,7 @@
           />
           <q-separator />
           <q-btn
+            padding="md"
             @click="logout"
             flat
             no-caps
@@ -162,9 +169,9 @@
           <div class="text-h6 text-bold">Settings</div>
           <q-list>
             <q-item>
-              <q-item-section avatar
-                ><q-icon name="mode_night"
-              /></q-item-section>
+              <q-item-section avatar>
+                <q-icon name="mode_night" />
+              </q-item-section>
               <q-item-section>
                 <q-item-label>Dark Theme</q-item-label>
               </q-item-section>
@@ -192,7 +199,16 @@
           <q-btn v-close-popup no-caps flat icon="arrow_back" />
         </q-toolbar>
         <div class="text-h6 text-bold q-px-lg">Notifications</div>
-        <q-card-section>
+        <q-card-section class="q-gutter-y-sm">
+          <div
+            v-show="!notifications || !notifications.length"
+            class="text-center"
+          >
+            <q-icon size="lg" color="secondary" name="fas fa-cloud-sun" />
+            <div class="text-subtitle1 q-mt-sm text-grey">
+              Everything is clear.
+            </div>
+          </div>
           <q-card
             flat
             v-for="(notif, i) in notifications"
@@ -205,14 +221,14 @@
                   <img :src="notif.from.photoURL" alt="Avatar" />
                 </q-avatar>
                 <q-avatar
+                  size="60px"
                   v-else
                   color="teal"
                   text-color="white"
                   class="text-bold"
-                  >{{
-                    notif.from.displayName.charAt(0).toUpperCase()
-                  }}</q-avatar
                 >
+                  {{ notif.from.displayName.charAt(0).toUpperCase() }}
+                </q-avatar>
               </q-item-section>
               <q-item-section>
                 <q-item-label class="text-bold q-gutter-x-sm">
@@ -221,20 +237,32 @@
                   <span class="text-body2">Mar 13</span>
                 </q-item-label>
                 <q-item-label
-                  >invited you to join in
-                  <span class="text-bold">{{
-                    notif.group.name
-                  }}</span></q-item-label
+                  caption
+                  @click="$router.push('/group/' + notif.groupId)"
+                  :class="notif.unread ? 'text-white' : ''"
                 >
+                  invited you to join in
+                  <span class="text-bold">
+                    {{ notif.group.name }}
+                  </span>
+                </q-item-label>
               </q-item-section>
 
-              <q-item-section side top>
-                <q-icon name="las la-ellipsis-v" />
+              <q-item-section
+                side
+                top
+                :class="notif.unread ? 'text-white' : ''"
+              >
+                <q-icon name="las la-ellipsis-h" />
               </q-item-section>
             </q-item>
-            <div class="q-pa-sm q-gutter-x-sm text-center bg-overlay">
+            <div
+              v-if="notif.type == 'group-invite'"
+              class="q-pa-sm text-center bg-overlay"
+            >
               <q-btn
                 @click="accept(notif)"
+                class="q-mr-sm"
                 padding="xs lg"
                 rounded
                 unelevated
@@ -265,7 +293,14 @@
 <script setup>
 import EssentialLink from "components/EssentialLink.vue";
 import { useStore } from "vuex";
-import { defineComponent, ref, computed, watch, onBeforeMount } from "vue";
+import {
+  defineComponent,
+  ref,
+  computed,
+  watch,
+  onBeforeMount,
+  onMounted,
+} from "vue";
 import { useQuasar } from "quasar";
 
 const linksList = [
@@ -283,30 +318,23 @@ const linksList = [
   },
 ];
 
-const $q = useQuasar();
-const store = useStore();
-const leftDrawerOpen = ref(false);
-const notifDialog = ref(false);
-const settingsDialog = ref(false);
-const dialog = ref(false);
-const darkTheme = ref();
+const $q = useQuasar(),
+  store = useStore(),
+  leftDrawerOpen = ref(false),
+  notifDialog = ref(false),
+  settingsDialog = ref(false),
+  dialog = ref(false),
+  darkTheme = ref(false);
 
 //Computed properties
-// Auth User
-const authUser = computed(() => store.state.auth.authUser);
-// Notifactions
-const notifications = computed(() => store.state.user.notifications);
+const authUser = computed(() => store.state.auth.authUser),
+  notifications = computed(() => store.state.user.notifications);
 
-// Accept Inivite
-const accept = (notif) => store.dispatch("user/acceptInvite", notif);
-// Decline Inivite
-const decline = (notif) => store.dispatch("user/declineInvite", notif);
+// Inivite
+const accept = (notif) => store.dispatch("user/acceptInvite", notif),
+  decline = (notif) => store.dispatch("user/declineInvite", notif), // Decline Inivite
+  getNotif = () => store.dispatch("user/getNotifications"); // Get notifcations
 
-// Get notifcations
-const getNotif = () => store.dispatch("user/getNotifications");
-
-// Set Dark theme
-darkTheme.value = authUser.value.darkTheme;
 const changeTheme = (value, evt) => {
   $q.dark.set(value);
   store.dispatch("user/setTheme", value);
@@ -317,11 +345,16 @@ const logout = () => {
   store.dispatch("auth/logoutUser");
 };
 
-onBeforeMount(() => {
-  // set Dark Theme Profile
+onMounted(() => {
   if (authUser.value.darkTheme) {
-    $q.dark.set(true);
+    darkTheme.value = authUser.value.darkTheme;
+    $q.dark.set(authUser.value.darkTheme);
+  } else {
+    $q.dark.set(false);
   }
+});
+
+onBeforeMount(() => {
   getNotif();
 });
 </script>

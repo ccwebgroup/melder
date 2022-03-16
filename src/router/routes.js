@@ -25,10 +25,19 @@ const routes = [
     },
     children: [
       { path: "/home", component: () => import("pages/user/Home.vue") },
-      { path: "/files", component: () => import("pages/files/Files.vue") },
-      { path: "/groups", component: () => import("pages/group/Groups.vue") },
+      {
+        path: "/files",
+        name: "Files",
+        component: () => import("pages/files/Files.vue"),
+      },
+      {
+        path: "/groups",
+        name: "Groups",
+        component: () => import("pages/group/Groups.vue"),
+      },
       {
         path: "/updates",
+        name: "Updates",
         component: () => import("pages/updates/Updates.vue"),
       },
     ],
