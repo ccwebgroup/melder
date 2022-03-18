@@ -1,19 +1,18 @@
 <template>
   <router-view />
 </template>
-<script>
-import { defineComponent } from "vue";
-import { mapActions } from "vuex";
 
-export default defineComponent({
-  name: "App",
+<script setup>
+import { onBeforeMount } from "vue";
+import { useAuthStore } from "./stores/auth";
 
-  methods: {
-    ...mapActions("auth", ["handleAuthStateChanged"]),
-  },
+const authStore = useAuthStore();
 
-  created() {
-    this.handleAuthStateChanged();
-  },
+const handler = () => {
+  authStore.handleAuthStateChanged();
+};
+
+onBeforeMount(() => {
+  handler();
 });
 </script>

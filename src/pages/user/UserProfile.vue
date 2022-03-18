@@ -28,23 +28,24 @@
             </div>
             <div class="text-center">
               <q-avatar size="100px" v-if="authUser.photoURL">
-                <img id="profile_avatar" :src="authUser.photoURL"
-              /></q-avatar>
+                <img id="profile_avatar" :src="authUser.photoURL" />
+              </q-avatar>
               <q-avatar
                 v-else
                 size="100px"
                 color="teal"
                 text-color="white"
                 class="text-bold"
-                >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
+                >{{ authUser.displayName[0].toUpperCase() }}</q-avatar
               >
               <div class="text-subtitle2 text-bold q-mt-sm">
                 {{ authUser.displayName }}
               </div>
               <div class="text-caption">
-                <q-icon name="email" class="q-mr-sm" /><span>{{
-                  authUser.email
-                }}</span>
+                <q-icon name="email" class="q-mr-sm" />
+                <span>
+                  {{ authUser.email }}
+                </span>
               </div>
             </div>
 
@@ -52,7 +53,7 @@
             <div>
               <!-- Groups -->
               <div class="text-subtitle1 text-bold">Groups</div>
-              <div v-show="!groups_manage || !groups_manage.length">
+              <div v-show="!groups_manage.length">
                 <q-btn
                   to="/group/create"
                   no-caps
@@ -98,7 +99,7 @@
                 v-show="!authUser.social_links || !authUser.social_links.length"
                 class="text-subtitle1 text-grey text-center"
               >
-                <span>Add some links... </span>
+                <span>Add some links...</span>
                 <q-icon size="20px" color="primary" name="fas fa-mug-hot" />
               </div>
               <q-list dense class="q-mt-md">
@@ -107,15 +108,16 @@
                   :key="link.platform"
                   clickable
                 >
-                  <q-item-section avatar
-                    ><q-icon
+                  <q-item-section avatar>
+                    <q-icon
                       class="text-primary"
                       size="xs"
                       :name="'ti-' + link.platform.toLowerCase()"
-                  /></q-item-section>
-                  <q-item-section @click="openLink(link)">
-                    {{ link.username }}</q-item-section
-                  >
+                    />
+                  </q-item-section>
+                  <q-item-section @click="openLink(link)">{{
+                    link.username
+                  }}</q-item-section>
                   <q-item-section side>
                     <q-btn
                       @click="deleteSocialLink(link)"
@@ -135,7 +137,7 @@
                   label="Platform"
                   v-model="social_links.platform"
                   standout="bg-primary text-white"
-                  @update:model-value="addSocialLink"
+                  @update:model-value="addLink"
                   :options="platforms"
                 />
                 <transition
@@ -286,7 +288,9 @@
     </q-dialog>
 
     <!-- Loading design -->
-    <q-inner-loading :showing="loading" />
+    <q-inner-loading :showing="loading">
+      <q-spinner-ball size="50px" color="primary" />
+    </q-inner-loading>
   </q-page>
 </template>
 <style lang="sass" scoped>
@@ -300,9 +304,13 @@
 
 <script setup>
 import { computed, ref, onMounted, reactive, watch, onBeforeMount } from "vue";
-import { useStore } from "vuex";
+import { useAuthStore } from "../../stores/auth";
+import { useUserStore } from "../../stores/users";
+import { useGroupStore } from "../../stores/groups";
 
-const store = useStore();
+const authStore = useAuthStore();
+const userStore = useUserStore();
+const groupStore = useGroupStore();
 const loading = ref(true);
 const editDialog = ref(false);
 const confirmDialog = ref(false);
@@ -323,7 +331,7 @@ const confirmDetails = reactive({
 });
 
 // Computued Properties
-const authUser = computed(() => store.state.auth.authUser);
+const authUser = computed(() => authStore.getAuthProfile);
 
 //Add Social Links
 const social_links = reactive({
@@ -331,20 +339,19 @@ const social_links = reactive({
   username: "",
 });
 const platforms = ["Facebook", "Twitter", "Instagram", "LinkedIn", "Youtube"];
-const addSocialLink = (platform) => {
+const addLink = (platform) => {
   social_links.platform = platform;
 };
 const saveSocialLink = () => {
-  store.dispatch("user/updateUserProfile", { link: social_links });
+  userStore.updateUserProfile({ link: social_links });
 };
 const openLink = (link) => {
   let url = "https://" + link.platform.toLowerCase() + ".com/";
   openURL(url + link.username);
 };
-
 // Delete Social Link
 const deleteSocialLink = (link) => {
-  store.dispatch("user/updateUserProfile", { delete: true, link: link });
+  userStore.updateUserProfile({ delete: true, link: link });
 };
 
 // Editing Profile
@@ -362,13 +369,13 @@ const saveProfile = () => {
     confirmDialog.value = true;
     return;
   }
-  store.dispatch("user/updateUserProfile", user);
+  userStore.updateUserProfile(user);
   setTimeout(() => {
     user.photoURL = "";
   }, 2000);
 };
 const confirmdUpdate = () => {
-  store.dispatch("user/reAuthenticateUser", {
+  authStore.reAuthenticateUser({
     credential: confirmDetails,
     newDetails: user,
   });
@@ -398,9 +405,9 @@ const fileUploaded = (e) => {
 };
 
 // Get Groups Manage
-const groups_manage = computed(() => store.state.group.groups_manage);
+const groups_manage = computed(() => groupStore.groupsManage);
 const getGroupsManage = () => {
-  store.dispatch("group/getGroupsManage");
+  groupStore.getGroupsManage();
 };
 
 //Loading State

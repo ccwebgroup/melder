@@ -9,7 +9,7 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <div v-show="!loading">
+      <div v-show="!loading" v-if="groupDetails">
         <q-item>
           <q-item-section>
             <q-avatar size="100px" v-show="groupDetails.photoURL">
@@ -230,74 +230,59 @@
           <q-inner-loading color="primary" :showing="searching" />
         </q-card>
 
-        <div class="q-pa-lg">
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-          <span
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni
-            voluptatum reprehenderit quisquam! Iste quod blanditiis suscipit
-            sapiente, doloremque voluptatem, modi eveniet exercitationem facilis
-            voluptatum consequatur pariatur rem aliquid, iusto deleniti?</span
-          >
-        </div>
-
-        <q-card class="fixed-bottom q-py-md">
+        <q-card
+          class="fixed-bottom q-py-md border-top-rounded bg-primary text-white"
+        >
           <q-card-section>
             <div class="text-body1 q-mb-sm">Get invite code</div>
             <q-btn-group outline>
               <q-btn
+                no-caps
+                @click="copyCode(defaultInviteCode)"
                 outline
                 padding="md lg"
-                color="primary"
-                label="73hm66BS7LmcvGplA7Tr"
+                :label="defaultInviteCode"
               />
-              <q-btn outline color="primary" icon="settings" />
+
+              <q-btn-dropdown auto-close outline icon="settings">
+                <q-list>
+                  <q-item-label header class="text-subtitle1"
+                    >Expiration</q-item-label
+                  >
+                  <q-item @click="setExpiration(false)" clickable>
+                    <q-item-section avatar>
+                      <q-avatar>
+                        <q-icon name="las la-times-circle" />
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-subtitle1"
+                        >No Limit</q-item-label
+                      >
+                    </q-item-section>
+                  </q-item>
+                  <q-item @click="setExpiration(7)" clickable>
+                    <q-item-section avatar>
+                      <q-avatar>
+                        <q-icon name="las la-stopwatch" />
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-subtitle1">7 Days</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item @click="setExpiration(1)" clickable>
+                    <q-item-section avatar>
+                      <q-avatar>
+                        <q-icon name="las la-stopwatch" />
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-subtitle1">1 Day</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-btn-dropdown>
             </q-btn-group>
           </q-card-section>
         </q-card>
@@ -403,14 +388,20 @@
     </q-dialog>
 
     <!-- Loading design -->
-    <q-inner-loading :showing="loading" />
+    <q-inner-loading :showing="loading">
+      <q-spinner-ball size="50px" color="primary" />
+    </q-inner-loading>
   </q-page>
 </template>
 
 <script setup>
-import { onMounted, ref, computed, reactive, watch, onBeforeMount } from "vue";
+import { ref, computed, reactive, watch, onBeforeMount, onMounted } from "vue";
+import { copyToClipboard } from "quasar";
+import { useQuasar } from "quasar";
 import { useRoute } from "vue-router";
-import { useStore } from "vuex";
+import { useGroupStore } from "../../stores/groups";
+import { useAuthStore } from "../../stores/auth";
+import { useCodeStore } from "../../stores/invite-codes";
 const currentGroup = reactive({
   id: "",
   name: "",
@@ -421,9 +412,16 @@ const confirmDetails = reactive({
   email: "",
   password: "",
 });
+const inviteCode = reactive({
+  expiration: "",
+  groupId: "",
+});
 
 const search = ref(),
-  store = useStore(),
+  $q = useQuasar(),
+  groupStore = useGroupStore(),
+  authStore = useAuthStore(),
+  codeStore = useCodeStore(),
   route = useRoute(),
   tab = ref(""),
   loading = ref(true),
@@ -436,8 +434,9 @@ const adminDialog = ref(false),
   confirmDialog = ref(false);
 
 // Store State as a computed property
-const searchResults = computed(() => store.state.user.searchResults);
-const groupDetails = computed(() => store.state.group.groupDetails);
+const searchResults = null;
+const groupDetails = computed(() => groupStore.groupProfile);
+const inviteCodes = computed(() => codeStore.inviteCodes);
 
 // Watch changes on the input fields
 watch(currentGroup, () => {
@@ -455,47 +454,86 @@ watch(search, (value, oldValue) => {
   }
 });
 
-watch(searchResults, (value, oldValue) => {
+/* watch(searchResults, (value, oldValue) => {
   if (value) {
     setTimeout(() => {
       searching.value = false;
     }, 700);
   }
-});
+}); */
 
 const openAddMemberDialog = () => {
-  store.dispatch("user/getPeopleOnSearch", {});
+  if (!inviteCodes.value.length) {
+    setExpiration(1);
+  } else {
+    defaultInviteCode.value = inviteCodes.value[0].id;
+  }
+  // store.dispatch("user/getPeopleOnSearch", {});
   addMemberDialog.value = true;
+};
+
+const somedate = {
+  createdAt: "March 17, 2022 at 12:34:23 AM UTC+8",
+  creatorId: "GKSCIjLrHMRwoU5h7awji0ZsCwp2",
+  expiration: false,
+  groupId: "2T7O0obZTcoMsUQbSdcO",
+  id: "KilduqG9QUW41FvcyxH2",
 };
 
 // Get invite codes
 const getCodes = () => {
-  store.dispatch("group/getInviteCodes", {
-    userId: id,
-    groupId: groupDetails.value.id,
+  codeStore.getInviteCodes({
+    groupId: route.params.id,
+  });
+};
+const defaultInviteCode = ref();
+
+// Set Invite Code Expiration
+const setExpiration = async (expiration) => {
+  // Check if code exist
+  const index = inviteCodes.value.findIndex(
+    (code) => code.expiration == expiration
+  );
+  console.log(index);
+  if (index >= 0) {
+    defaultInviteCode.value = inviteCodes.value[index].id;
+  } else {
+    let newCode = await codeStore.addInviteCode({
+      expiration: expiration,
+      groupId: route.params.id,
+    });
+    defaultInviteCode.value = newCode.id;
+  }
+};
+
+// Copy invite code to clipboard
+const copyCode = (code) => {
+  copyToClipboard(code).then(() => {
+    $q.notify({
+      message: "Invite code copied",
+      color: "positive",
+    });
   });
 };
 
 // Invite User
 const invite = (id) =>
-  store.dispatch("group/sendGroupInvite", {
+  groupStore.sendGroupInvite({
     userId: id,
     groupId: groupDetails.value.id,
   });
 
 // Get People on Search
 const getPeople = () => {
-  store.dispatch("user/getPeopleOnSearch", {
-    keyword: search.value,
-    groupId: groupDetails.value.id,
-  });
+  // no code yet
 };
 
 // Delete Group
 const confirmedDelete = () => {
-  store.dispatch("user/reAuthenticateUser", {
+  authStore.reAuthenticateUser({
     credential: confirmDetails,
-    group_id: groupDetails.value.id,
+    groupId: groupDetails.value.id,
+    groupDelete: true,
   });
   confirmDialog.value = false;
 };
@@ -509,12 +547,7 @@ const editingMode = (group) => {
   adminDialog.value = false;
 };
 const saveProfile = () => {
-  store.dispatch("group/updateGroupProfile", currentGroup);
-};
-
-// Get Group Details
-const getDetails = () => {
-  store.dispatch("group/getGroupProfile", route.params.id);
+  groupStore.updateGroupProfile(currentGroup);
 };
 
 //Image Upload
@@ -542,7 +575,8 @@ const showLoading = () => {
 };
 
 onBeforeMount(() => {
-  getDetails();
+  getCodes();
+  groupStore.getGroupProfile(route.params.id);
   showLoading();
 });
 </script>
