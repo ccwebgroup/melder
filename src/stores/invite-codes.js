@@ -3,9 +3,11 @@ import { defineStore } from "pinia";
 //Firebase
 import {
   db,
+  doc,
   auth,
   collection,
   getDocs,
+  setDoc,
   addDoc,
   query,
   where,
@@ -46,6 +48,8 @@ export const useCodeStore = defineStore("inviteCodes", {
     },
 
     async declineInvite(notif) {
+      const notifStore = useNotifStore();
+      const groupStore = useGroupStore();
       // Delete Notif
       await notifStore.deleteNotif(notif);
       //Remove from the group's invite list

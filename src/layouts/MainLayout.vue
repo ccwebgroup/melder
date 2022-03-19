@@ -43,10 +43,34 @@
         indicator-color="transparent"
         :active-color="$q.dark.isActive ? 'secondary' : 'primary'"
       >
-        <q-route-tab to="/updates" no-caps name="update" icon="ti-announcement" label="Updates" />
-        <q-route-tab to="/groups" no-caps name="groups" icon="ti-id-badge" label="Groups" />
-        <q-route-tab to="/files" no-caps name="files" icon="ti-folder" label="Files" />
-        <q-route-tab to="/home" no-caps name="home" icon="ti-home" label="Home" />
+        <q-route-tab
+          to="/updates"
+          no-caps
+          name="update"
+          icon="ti-announcement"
+          label="Updates"
+        />
+        <q-route-tab
+          to="/groups"
+          no-caps
+          name="groups"
+          icon="ti-id-badge"
+          label="Groups"
+        />
+        <q-route-tab
+          to="/files"
+          no-caps
+          name="files"
+          icon="ti-folder"
+          label="Files"
+        />
+        <q-route-tab
+          to="/home"
+          no-caps
+          name="home"
+          icon="ti-home"
+          label="Home"
+        />
       </q-tabs>
     </q-footer>
 
@@ -88,14 +112,18 @@
                 color="teal"
                 text-color="white"
                 class="text-bold"
-              >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar>
+                >{{ authUser.displayName.charAt(0).toUpperCase() }}</q-avatar
+              >
             </q-item-section>
             <q-item-section>
-              <q-item-label class="text-subtitle2 text-bold">{{ authUser.displayName }}</q-item-label>
+              <q-item-label class="text-subtitle2 text-bold">{{
+                authUser.displayName
+              }}</q-item-label>
               <q-item-label
                 caption
                 :class="$q.dark.isActive ? 'text-secondary' : 'text-primary'"
-              >Manage Your Profile</q-item-label>
+                >Manage Your Profile</q-item-label
+              >
             </q-item-section>
           </q-item>
         </q-card-section>
@@ -103,13 +131,23 @@
           <q-separator />
           <q-btn
             padding="md"
-            @click="settingsDialog = true; dialog = false;"
+            @click="
+              settingsDialog = true;
+              dialog = false;
+            "
             flat
             no-caps
             label="Settings"
           />
           <q-separator />
-          <q-btn padding="md" @click="logout" flat no-caps color="negative" label="Sign Out" />
+          <q-btn
+            padding="md"
+            @click="logout"
+            flat
+            no-caps
+            color="negative"
+            label="Sign Out"
+          />
         </div>
       </q-card>
     </q-dialog>
@@ -136,7 +174,10 @@
                 <q-item-label>Dark Theme</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-toggle @update:model-value="changeTheme" v-model="darkTheme" />
+                <q-toggle
+                  @update:model-value="changeTheme"
+                  v-model="darkTheme"
+                />
               </q-item-section>
             </q-item>
           </q-list>
@@ -157,15 +198,20 @@
         </q-toolbar>
         <div class="text-h6 text-bold q-px-lg">Notifications</div>
         <q-card-section class="q-gutter-y-sm">
-          <div v-show="!notifications || !notifications.length" class="text-center">
+          <div
+            v-show="!notifications || !notifications.length"
+            class="text-center"
+          >
             <q-icon size="lg" color="secondary" name="fas fa-cloud-sun" />
-            <div class="text-subtitle1 q-mt-sm text-grey">Everything is clear.</div>
+            <div class="text-subtitle1 q-mt-sm text-grey">
+              Everything is clear.
+            </div>
           </div>
           <q-card
             flat
             v-for="(notif, i) in notifications"
             :key="i"
-            :class="notif.unread ? 'bg-teal-gradient text-white' : ''"
+            :class="!notif.viewed ? 'bg-info text-white' : ''"
           >
             <q-item>
               <q-item-section avatar>
@@ -178,7 +224,10 @@
                   color="teal"
                   text-color="white"
                   class="text-bold"
-                >{{ notif.from.displayName.charAt(0).toUpperCase() }}</q-avatar>
+                  >{{
+                    notif.from.displayName.charAt(0).toUpperCase()
+                  }}</q-avatar
+                >
               </q-item-section>
               <q-item-section>
                 <q-item-label class="text-bold q-gutter-x-sm">
@@ -196,11 +245,18 @@
                 </q-item-label>
               </q-item-section>
 
-              <q-item-section side top :class="notif.unread ? 'text-white' : ''">
+              <q-item-section
+                side
+                top
+                :class="notif.unread ? 'text-white' : ''"
+              >
                 <q-icon name="las la-ellipsis-h" />
               </q-item-section>
             </q-item>
-            <div v-if="notif.type == 'group-invite'" class="q-pa-sm text-center bg-overlay">
+            <div
+              v-if="notif.type == 'group-invite'"
+              class="q-pa-sm text-center bg-overlay"
+            >
               <q-btn
                 @click="accept(notif)"
                 class="q-mr-sm"
@@ -233,12 +289,9 @@
 
 <script setup>
 import EssentialLink from "components/EssentialLink.vue";
-import {
-  ref,
-  computed,
-  onBeforeMount,
-} from "vue";
+import { ref, computed, onBeforeMount } from "vue";
 import { useQuasar } from "quasar";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import { useNotifStore } from "../stores/notifs";
 import { useCodeStore } from "../stores/invite-codes";
@@ -259,6 +312,7 @@ const linksList = [
 ];
 
 const $q = useQuasar(),
+  router = useRouter(),
   authStore = useAuthStore(),
   notifStore = useNotifStore(),
   codeStore = useCodeStore(),
@@ -270,7 +324,7 @@ const $q = useQuasar(),
 
 //Computed properties
 const authUser = computed(() => authStore.getAuthProfile),
-  notifications = computed(() => notifStore.notifications)
+  notifications = computed(() => notifStore.notifications);
 
 // Inivite
 const accept = (notif) => codeStore.acceptInvite(notif),
@@ -282,8 +336,11 @@ const changeTheme = (value, evt) => {
 };
 
 // Log out Method
-const logout = () => {
-  authStore.logoutUser()
+const logout = async () => {
+  const result = await authStore.logoutUser();
+  if (result == "logout") {
+    router.replace("/login");
+  }
 };
 
 onBeforeMount(() => {

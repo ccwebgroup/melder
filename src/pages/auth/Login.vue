@@ -33,22 +33,31 @@
           </template>
         </q-input>
         <q-btn
+          class="text-bold"
           @submit="login"
           type="submit"
           ripple
-          flat
+          rounded
+          unelevated
           color="primary"
           label="LOG IN"
-          size="lg"
+          style="width: 150px"
         />
       </q-form>
 
       <div class="q-mt-xl">
         <div class="text-body1">
           Need an account?
-          <router-link class="router-link" to="/signup">
-            <span class="text-h6 text-primary">Sign up</span>
-          </router-link>
+          <q-btn
+            padding="none"
+            no-caps
+            to="/signup"
+            class="text-bold text-subtitle2"
+            ripple
+            flat
+            color="primary"
+            label="Sign up"
+          />
         </div>
       </div>
     </div>

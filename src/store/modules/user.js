@@ -248,7 +248,7 @@ const actions = {
 
             //Relaod the element image source
             let el = document.querySelector("#profile_avatar");
-            if (el.src) {
+            if (el) {
               el.src = url;
             }
           });

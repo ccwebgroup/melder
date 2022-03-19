@@ -70,9 +70,16 @@
       <div class="q-mt-xl">
         <div class="text-body1">
           Already have an account?
-          <router-link class="router-link" to="/login">
-            <span class="text-h6 text-primary">Log in</span>
-          </router-link>
+          <q-btn
+            padding="none"
+            no-caps
+            to="/login"
+            class="text-bold text-subtitle2"
+            ripple
+            flat
+            color="primary"
+            label="Log in"
+          />
         </div>
       </div>
     </div>

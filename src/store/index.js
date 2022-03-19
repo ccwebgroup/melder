@@ -18,9 +18,9 @@ import group from "./modules/group";
 export default store(function (/* { ssrContext } */) {
   const Store = createStore({
     modules: {
-      auth,
-      user,
-      group,
+      // auth,
+      // user,
+      // group,
     },
 
     plugins: [],

@@ -34,8 +34,9 @@ export const useAuthStore = defineStore("auth", {
   },
 
   actions: {
-    logoutUser() {
-      auth.signOut();
+    async logoutUser() {
+      await auth.signOut();
+      if (!auth.currentUser) return "logout";
     },
 
     async loginUser(payload) {
@@ -72,7 +73,9 @@ export const useAuthStore = defineStore("auth", {
 
     async reAuthenticateUser(payload) {
       const groupStore = useGroupStore();
-      Loading.show();
+      Loading.show({
+        spinner: QSpinnerBall,
+      });
       try {
         const credential = EmailAuthProvider.credential(
           payload.credential.email,
@@ -179,8 +182,6 @@ export const useAuthStore = defineStore("auth", {
           userStore.getUserProfile(authUser.uid).then((profile) => {
             this.authUserProfile = profile;
           });
-        } else {
-          this.$router.replace("/login");
         }
       });
     },

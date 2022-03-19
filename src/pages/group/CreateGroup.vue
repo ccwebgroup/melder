@@ -1,78 +1,109 @@
 <template>
   <q-page>
-    <q-toolbar class="text-dark">
-      <q-btn @click="$router.back()" no-caps flat icon="arrow_back" />
-    </q-toolbar>
-    <div class="text-center q-mx-md">
-      <div class="text-h6 q-mb-sm">Create Group</div>
-      <input
-        @change="fileUploaded"
-        type="file"
-        id="fileInput"
-        style="display: none"
-      />
-      <q-avatar @click="uploadFile" size="100px" font-size="52px" color="grey">
-        <q-btn v-if="!group.photo" flat round icon="fas fa-camera" />
-        <img v-else :src="group.photo" />
-      </q-avatar>
+    <q-card flat>
+      <q-toolbar class="text-dar">
+        <q-btn @click="$router.back()" no-caps flat icon="arrow_back" />
 
-      <div class="q-gutter-y-md">
+        <div class="text-h6">Create Group</div>
+      </q-toolbar>
+      <q-card-section class="flex flex-center">
+        <input
+          @change="fileUploaded"
+          type="file"
+          id="fileInput"
+          style="display: none"
+        />
+        <q-avatar
+          @click="uploadFile"
+          size="100px"
+          font-size="52px"
+          color="grey"
+        >
+          <q-btn v-if="!group.photo" flat round icon="fas fa-camera" />
+          <img v-else :src="group.photo" />
+        </q-avatar>
+      </q-card-section>
+      <div class="text-subtitle1 text-center">Upload</div>
+      <q-card-section class="q-py-none q-gutter-y-sm">
         <q-input v-model="group.name" placeholder="Group Name" />
         <q-input
+          rows="5"
           v-model="group.description"
           placeholder="Description (optional)"
           filled
           type="textarea"
         />
+
+        <q-toggle label="Private" v-model="group.private" />
+      </q-card-section>
+      <q-card-actions align="center">
         <q-btn
           @click="createGroup"
           :disable="!group.name"
           unelevated
-          class="q-mb-md"
+          class="q-mb-sm"
           dense
+          padding="sm"
           style="width: 150px"
           color="primary"
           rounded
           no-caps
           label="Create"
         />
-      </div>
-      <div class="text-subtitle1 q-mt-md">Already have an invite code?</div>
-      <q-input
-        v-model="inviteCode"
-        class="q-mt-md"
-        rounded
-        outlined
-        placeholder="Type code here"
-      />
-      <q-btn
-        :disable="!inviteCode"
-        no-caps
-        unelevated
-        color="primary"
-        class="q-mt-md"
-        label="Join Group"
-      />
-    </div>
+      </q-card-actions>
+    </q-card>
+
+    <q-card square flat class="bg-blue-gradient text-white">
+      <q-card-section>
+        <div class="text-subtitle1 text-center">
+          Already have an invite code?
+        </div>
+        <q-input
+          color="white"
+          dark
+          dense
+          v-model="inviteCode"
+          class="q-mt-sm"
+          rounded
+          outlined
+          placeholder="Type code here"
+        />
+      </q-card-section>
+      <q-card-actions align="right" class="q-pb-md">
+        <q-btn
+          :disable="!inviteCode"
+          unelevated
+          dense
+          style="width: 150px"
+          rounded
+          no-caps
+          label="Join Group"
+        />
+      </q-card-actions>
+    </q-card>
   </q-page>
 </template>
 
 <script setup>
 import { reactive, ref } from "vue";
-import { useStore } from "vuex";
+import { useGroupStore } from "../../stores/groups";
+import { useRouter } from "vue-router";
 
-const store = useStore();
+const router = useRouter();
+const groupStore = useGroupStore();
 const inviteCode = ref("");
 
 const group = reactive({
   name: "",
   description: "",
   photo: "",
+  private: false,
 });
 
 // Create Group
-const createGroup = () => {
-  store.dispatch("group/addGroup", group);
+const createGroup = async () => {
+  const groupId = await groupStore.addGroup(group);
+  router.push("/group/" + groupId);
 };
 
 //Image Upload

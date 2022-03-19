@@ -1,19 +1,21 @@
 import { defineStore } from "pinia";
-import { Loading, Notify } from "quasar";
-
+import { Loading, Notify, QSpinnerBall } from "quasar";
 //Firebase
 import {
   db,
   auth,
   doc,
   collection,
+  addDoc,
   getDoc,
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   writeBatch,
   query,
   where,
+  limit,
   arrayRemove,
   arrayUnion,
   serverTimestamp,
@@ -28,6 +30,7 @@ import {
 import { useUserStore } from "./users";
 import { useNotifStore } from "./notifs";
 import { useCodeStore } from "./invite-codes";
+import { useSearchStore } from "./search";
 
 export const useGroupStore = defineStore("groups", {
   state: () => {
@@ -64,6 +67,7 @@ export const useGroupStore = defineStore("groups", {
       }
     },
 
+    // This will be process after the User accepted or Declined the group invite
     async deleteInviteList(notif) {
       const groupRef = doc(db, "groups", notif.groupId);
       await updateDoc(groupRef, {
@@ -71,14 +75,52 @@ export const useGroupStore = defineStore("groups", {
       });
     },
 
+    async cancelGroupInvite(payload) {
+      const searchStore = useSearchStore();
+      //Remove from the group invites list
+      const groupRef = doc(db, "groups", payload.groupId);
+      await updateDoc(groupRef, {
+        invites: arrayRemove(payload.userId),
+      });
+      //Remove User notification
+
+      const notifRef = collection(
+        doc(db, "users", payload.userId),
+        "notifications"
+      );
+      const q = query(
+        notifRef,
+        where("groupId", "==", payload.groupId),
+        where("type", "==", "group-invite"),
+        limit(1)
+      );
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((data) => {
+        deleteDoc(doc(notifRef, data.id));
+      });
+
+      const index = searchStore.searchResults.findIndex(
+        (user) => user.id == payload.userId
+      );
+      if (index !== -1) {
+        searchStore.searchResults[index].invited = false;
+      }
+    },
+
     async sendGroupInvite(payload) {
+      const searchStore = useSearchStore();
       const notifStore = useNotifStore();
       const groupRef = doc(db, "groups", payload.groupId);
       const docSnap = updateDoc(groupRef, {
         invites: arrayUnion(payload.userId),
       });
-      notifStore.addUserNotification(payload);
-      // commit("user/updateSearch", payload.userId, { root: true });
+      notifStore.addUserNotification({ ...payload, type: "group-invite" });
+      const index = searchStore.searchResults.findIndex(
+        (user) => user.id == payload.userId
+      );
+      if (index !== -1) {
+        searchStore.searchResults[index].invited = true;
+      }
     },
 
     async updateGroupProfile(payload) {
@@ -132,6 +174,7 @@ export const useGroupStore = defineStore("groups", {
         groupData.hasRole = groupData.roles[index];
       }
       this.groupProfile = groupData;
+      return groupData;
     },
 
     async getGroupsManage() {
@@ -164,13 +207,16 @@ export const useGroupStore = defineStore("groups", {
     async addGroup(payload) {
       const userStore = useUserStore();
       const codeStore = useCodeStore();
-      Loading.show();
+      Loading.show({
+        spinner: QSpinnerBall,
+      });
       const authUser = auth.currentUser;
       const groupDetails = {
         creatorId: authUser.uid,
         createdAt: serverTimestamp(),
         name: payload.name,
         description: payload.description,
+        private: payload.private,
         roles: [
           {
             userId: authUser.uid,
@@ -192,19 +238,20 @@ export const useGroupStore = defineStore("groups", {
         this.addMember({ userId: authUser.uid, groupId: groupRef.id });
 
         // Set Group Avatar save to Storage
-        this.addGroupAvatar({
+        await this.addGroupAvatar({
           newGroup: true,
           id: groupRef.id,
           photo: payload.photo,
         });
 
         // Add the Group to User's Groups Manage
-        userStore.addGroupManage({
+        await userStore.addGroupManage({
           userId: authUser.uid,
           groupId: groupRef.id,
         });
       }
       Loading.hide();
+      return groupRef.id;
     },
 
     async addGroupAvatar(payload) {
@@ -221,9 +268,7 @@ export const useGroupStore = defineStore("groups", {
           photoURL: url,
         });
         //  Redirect new Group to profile page
-        if (payload.newGroup) {
-          this.$router.push("/group/" + payload.id);
-        } else {
+        if (!payload.newGroup) {
           //Relaod the element image source
           let el = document.querySelector("#group_avatar");
           if (el.src) {

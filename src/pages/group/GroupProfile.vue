@@ -122,7 +122,7 @@
                 <q-icon name="ti-pencil-alt" />
               </q-item-section>
               <q-item-section class="text-subtitle1"
-                >Edit Group Profile</q-item-section
+                >Group Profile</q-item-section
               >
             </q-item>
             <q-item
@@ -151,7 +151,7 @@
       transition-hide="slide-down"
     >
       <q-card>
-        <q-card class="fixed-top">
+        <q-card>
           <q-toolbar :class="$q.dark.isActive ? '' : 'text-dark'">
             <q-btn v-close-popup no-caps flat icon="arrow_back" />
           </q-toolbar>
@@ -174,8 +174,8 @@
         </q-card>
 
         <!-- Search Results -->
-        <q-card>
-          <q-card-section v-if="searchResults">
+        <q-card class="position-relative">
+          <q-card-section class="q-py-none" v-if="searchResults">
             <!-- Search Results -->
             <transition
               appear
@@ -209,8 +209,7 @@
                     <q-item-section side>
                       <q-btn
                         v-if="!user.alreadyMember"
-                        @click="invite(user.id)"
-                        :disable="user.invited"
+                        @click="toggleInvite(user)"
                         round
                         flat
                         :color="user.invited ? 'positive' : ''"
@@ -241,7 +240,7 @@
                 @click="copyCode(defaultInviteCode)"
                 outline
                 padding="md lg"
-                :label="defaultInviteCode"
+                :label="defaultInviteCode.id"
               />
 
               <q-btn-dropdown auto-close outline icon="settings">
@@ -284,6 +283,14 @@
                 </q-list>
               </q-btn-dropdown>
             </q-btn-group>
+            <div class="text-caption">
+              <span class="q-mr-msmd">Expiration: </span
+              >{{
+                defaultInviteCode.expiration
+                  ? defaultInviteCode.expiration + " Day(s)"
+                  : "No Limit"
+              }}
+            </div>
           </q-card-section>
         </q-card>
       </q-card>
@@ -331,24 +338,23 @@
                 filled
                 type="textarea"
               />
-              <q-btn
-                @click="saveProfile"
-                :disable="disableUpdate"
-                unelevated
-                class="q-mb-md"
-                style="width: 150px"
-                color="primary"
-                rounded
-                no-caps
-                label="Update"
-              />
             </div>
           </div>
         </q-card-section>
 
-        <q-card-actions class="q-mt-md">
+        <q-card-actions class="q-mt-md q-pa-lg">
           <q-space />
-          <q-btn v-close-popup flat size="lg" label="Back" />
+          <q-btn class="text-bold" v-close-popup no-caps flat label="Cancel" />
+          <q-btn
+            class="text-bold"
+            v-close-popup
+            @click="saveProfile"
+            :disable="disableUpdate"
+            flat
+            rounded
+            no-caps
+            label="Save"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -366,14 +372,20 @@
           Please confirm all details to permanently delete group
         </div>
 
-        <q-card-section class="q-pt-none q-gutter-y-sm">
+        <q-card-section class="q-pt-none q-gutter-y-md">
           <q-input
+            rounded
+            outlined
+            dense
             type="email"
             v-model="confirmDetails.email"
             autofocus
             label="Email"
           />
           <q-input
+            rounded
+            outlined
+            dense
             type="password"
             v-model="confirmDetails.password"
             label="Password"
@@ -381,8 +393,14 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn @click="confirmedDelete" flat label="Confirm" />
+          <q-btn class="text-bold" no-caps flat label="Cancel" v-close-popup />
+          <q-btn
+            class="text-bold"
+            no-caps
+            @click="confirmedDelete"
+            flat
+            label="Confirm"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -402,6 +420,7 @@ import { useRoute } from "vue-router";
 import { useGroupStore } from "../../stores/groups";
 import { useAuthStore } from "../../stores/auth";
 import { useCodeStore } from "../../stores/invite-codes";
+import { useSearchStore } from "../../stores/search";
 const currentGroup = reactive({
   id: "",
   name: "",
@@ -422,6 +441,7 @@ const search = ref(),
   groupStore = useGroupStore(),
   authStore = useAuthStore(),
   codeStore = useCodeStore(),
+  searchStore = useSearchStore(),
   route = useRoute(),
   tab = ref(""),
   loading = ref(true),
@@ -434,7 +454,7 @@ const adminDialog = ref(false),
   confirmDialog = ref(false);
 
 // Store State as a computed property
-const searchResults = null;
+const searchResults = computed(() => searchStore.searchResults);
 const groupDetails = computed(() => groupStore.groupProfile);
 const inviteCodes = computed(() => codeStore.inviteCodes);
 
@@ -444,40 +464,35 @@ watch(currentGroup, () => {
 });
 
 // WATCH search input
-watch(search, (value, oldValue) => {
-  if (value) {
+watch(search, (keyword, oldKeyword) => {
+  if (keyword) {
     searching.value = true;
-    getPeople();
+    searchStore.getUserOnSearch({
+      keyword: keyword,
+      groupId: route.params.id,
+    });
   }
-  if (!value) {
-    getPeople();
+  if (!keyword) {
+    searchStore.searchResults = null;
   }
 });
 
-/* watch(searchResults, (value, oldValue) => {
-  if (value) {
+watch(searchResults, (results, oldResults) => {
+  if (results) {
     setTimeout(() => {
       searching.value = false;
     }, 700);
   }
-}); */
+});
 
 const openAddMemberDialog = () => {
   if (!inviteCodes.value.length) {
     setExpiration(1);
   } else {
-    defaultInviteCode.value = inviteCodes.value[0].id;
+    defaultInviteCode.value = inviteCodes.value[0];
   }
   // store.dispatch("user/getPeopleOnSearch", {});
   addMemberDialog.value = true;
-};
-
-const somedate = {
-  createdAt: "March 17, 2022 at 12:34:23 AM UTC+8",
-  creatorId: "GKSCIjLrHMRwoU5h7awji0ZsCwp2",
-  expiration: false,
-  groupId: "2T7O0obZTcoMsUQbSdcO",
-  id: "KilduqG9QUW41FvcyxH2",
 };
 
 // Get invite codes
@@ -494,15 +509,14 @@ const setExpiration = async (expiration) => {
   const index = inviteCodes.value.findIndex(
     (code) => code.expiration == expiration
   );
-  console.log(index);
   if (index >= 0) {
-    defaultInviteCode.value = inviteCodes.value[index].id;
+    defaultInviteCode.value = inviteCodes.value[index];
   } else {
     let newCode = await codeStore.addInviteCode({
       expiration: expiration,
       groupId: route.params.id,
     });
-    defaultInviteCode.value = newCode.id;
+    defaultInviteCode.value = { id: newCode.id, expiration: expiration };
   }
 };
 
@@ -517,15 +531,18 @@ const copyCode = (code) => {
 };
 
 // Invite User
-const invite = (id) =>
-  groupStore.sendGroupInvite({
-    userId: id,
-    groupId: groupDetails.value.id,
-  });
-
-// Get People on Search
-const getPeople = () => {
-  // no code yet
+const toggleInvite = (user) => {
+  if (user.invited) {
+    groupStore.cancelGroupInvite({
+      userId: user.id,
+      groupId: groupDetails.value.id,
+    });
+  } else {
+    groupStore.sendGroupInvite({
+      userId: user.id,
+      groupId: groupDetails.value.id,
+    });
+  }
 };
 
 // Delete Group

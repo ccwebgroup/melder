@@ -6,6 +6,7 @@ import { Notify } from "quasar";
 import {
   db,
   auth,
+  collection,
   doc,
   getDoc,
   setDoc,
@@ -31,6 +32,23 @@ export const useUserStore = defineStore("users", {
   },
 
   actions: {
+    async isBase64(base64String) {
+      let image = new Image();
+      image.src = base64String;
+      return await new Promise((resolve) => {
+        image.onload = function () {
+          if (image.height === 0 || image.width === 0) {
+            resolve(false);
+            return;
+          }
+          resolve(true);
+        };
+        image.onerror = () => {
+          resolve(false);
+        };
+      });
+    },
+
     async updateUserProfile(payload) {
       const authStore = useAuthStore();
       //Auth user
@@ -45,7 +63,8 @@ export const useUserStore = defineStore("users", {
       });
 
       // Change avatar or profile photo
-      if (payload.photoURL && payload.photoURL !== authUser.photoURL) {
+      const checkFile = await this.isBase64(payload.photoURL);
+      if (checkFile) {
         const avatarsRef = ref(
           storage,
           "users/" + authUser.uid + "/avatar/" + authUser.uid
@@ -62,8 +81,8 @@ export const useUserStore = defineStore("users", {
               });
 
               //Relaod the element image source
-              let el = document.querySelector("#profile_avatar");
-              if (el.src) {
+              let el = document.querySelector("#profile-avatar");
+              if (el) {
                 el.src = url;
               }
             });

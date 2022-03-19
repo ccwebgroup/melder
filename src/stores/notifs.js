@@ -5,8 +5,8 @@ import {
   db,
   auth,
   doc,
-  getDoc,
   setDoc,
+  deleteDoc,
   collection,
   serverTimestamp,
   query,
@@ -26,7 +26,7 @@ export const useNotifStore = defineStore("notifs", {
   },
 
   actions: {
-    async deleteNotification(notif) {
+    async deleteNotif(notif) {
       const notifRef = doc(
         collection(doc(db, "users", auth.currentUser.uid), "notifications"),
         notif.id
@@ -48,8 +48,12 @@ export const useNotifStore = defineStore("notifs", {
             const notif = change.doc.data();
             notif.id = change.doc.id;
             if (notif.type === "group-invite") {
-              notif.from = getUserProfile(notif.from);
-              notif.group = getGroupProfile(notif.groupId);
+              userStore.getUserProfile(notif.from).then((user) => {
+                notif.from = user;
+              });
+              groupStore.getGroupProfile(notif.groupId).then((group) => {
+                notif.group = group;
+              });
               const index = this.notifications.findIndex(
                 (item) => item.id === notif.id
               );
@@ -75,13 +79,11 @@ export const useNotifStore = defineStore("notifs", {
       const notifRef = doc(
         collection(doc(db, "users", payload.userId), "notifications")
       );
-
       await setDoc(notifRef, {
         createdAt: serverTimestamp(),
-        type: "group-invite",
+        type: payload.type,
         from: authUserId,
         groupId: payload.groupId,
-        unread: true,
       });
     },
   },

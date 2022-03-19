@@ -28,7 +28,7 @@
             </div>
             <div class="text-center">
               <q-avatar size="100px" v-if="authUser.photoURL">
-                <img id="profile_avatar" :src="authUser.photoURL" />
+                <img id="profile-avatar" :src="authUser.photoURL" />
               </q-avatar>
               <q-avatar
                 v-else
@@ -200,7 +200,7 @@
                 name="fas fa-camera"
               />
               <img
-                class="user_avatar"
+                id="user-avatar"
                 v-show="authUser.photoURL || user.photoURL"
                 :src="authUser.photoURL"
               />
@@ -233,27 +233,17 @@
           <div class="text-subtitle1 text-bold">Address</div>
           <q-input v-model="user.address" outlined label="Address" />
         </q-card-section>
-
-        <q-card-actions>
+        <q-card-actions align="right">
+          <q-btn class="text-bold" v-close-popup no-caps flat label="Cancel" />
           <q-btn
-            unelevated
-            :disable="disableUpdate"
-            style="width: 150px"
-            rounded
-            no-caps
-            label="Back"
+            class="text-bold"
             v-close-popup
-          />
-          <q-space />
-          <q-btn
             @click="saveProfile"
-            unelevated
             :disable="disableUpdate"
-            style="width: 150px"
-            color="primary"
+            flat
             rounded
             no-caps
-            label="Update"
+            label="Save"
           />
         </q-card-actions>
       </q-card>
@@ -371,7 +361,7 @@ const saveProfile = () => {
   }
   userStore.updateUserProfile(user);
   setTimeout(() => {
-    user.photoURL = "";
+    document.querySelector("#user-avatar").src = "";
   }, 2000);
 };
 const confirmdUpdate = () => {
@@ -397,7 +387,7 @@ const fileUploaded = (e) => {
     let reader = new FileReader();
     reader.onload = (e) => {
       let imageBase64 = e.target.result;
-      document.querySelector(".user_avatar").src = imageBase64;
+      document.querySelector("#user-avatar").src = imageBase64;
       user.photoURL = imageBase64;
     };
     reader.readAsDataURL(file[0]);

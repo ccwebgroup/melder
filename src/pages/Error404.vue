@@ -1,31 +1,34 @@
 <template>
-  <div class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
-    <div>
-      <div style="font-size: 30vh">
-        404
-      </div>
-
-      <div class="text-h2" style="opacity:.4">
-        Oops. Nothing here...
-      </div>
-
-      <q-btn
-        class="q-mt-xl"
-        color="white"
-        text-color="blue"
-        unelevated
-        to="/"
-        label="Go Home"
-        no-caps
+  <q-card flat>
+    <q-card-section class="text-center q-pa-lg">
+      <q-img
+        style="width: 200px; margin-top: 120px"
+        src="~assets/towing_re_cqhj.svg"
       />
-    </div>
-  </div>
+      <div class="text-h6 q-mt-sm">
+        This page isn't available. Sorry about that.
+      </div>
+    </q-card-section>
+    <q-card-actions align="center">
+      <q-btn
+        to="/"
+        class="text-bold"
+        unelevated
+        outline
+        no-caps
+        label="Go to Home page. "
+      >
+        <q-avatar size="30px" class="q-ml-sm">
+          <img src="~assets/melder-logo.svg" /> </q-avatar
+      ></q-btn>
+    </q-card-actions>
+  </q-card>
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'Error404'
-})
+  name: "Error404",
+});
 </script>
